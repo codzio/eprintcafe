@@ -85,6 +85,71 @@ data-kt-drawer="true" data-kt-drawer-name="app-sidebar" data-kt-drawer-activate=
                 </div>
                 @endif
 
+                @if(can('read', 'products')))
+                <div  data-kt-menu-trigger="click"  class="menu-item here show menu-accordion" >
+                    
+                    <span class="menu-link" >
+                        <span  class="menu-icon" >
+                            <i class="ki-outline ki-home-2 fs-2"></i>
+                        </span>
+                        <span  class="menu-title" >Products</span>
+                        <span  class="menu-arrow" ></span>
+                    </span>
+
+
+                    <div  class="menu-sub menu-sub-accordion" >
+                        <div  class="menu-item" >
+                            
+                            @can('read', 'category')
+                            <a class="menu-link"  href="{{ route('adminCategory') }}" >
+                                <span  class="menu-bullet" >
+                                    <span class="bullet bullet-dot"></span>
+                                </span>
+                                <span  class="menu-title">Category</span>
+                            </a>
+                            @endcan
+
+                            @can('read', 'paper-size')
+                            <a class="menu-link"  href="{{ route('adminPaperSize') }}" >
+                                <span  class="menu-bullet" >
+                                    <span class="bullet bullet-dot"></span>
+                                </span>
+                                <span  class="menu-title">Paper Size</span>
+                            </a>
+                            @endcan
+
+                            @can('read', 'paper-type')
+                            <a class="menu-link"  href="{{ route('adminPaperType') }}" >
+                                <span  class="menu-bullet" >
+                                    <span class="bullet bullet-dot"></span>
+                                </span>
+                                <span  class="menu-title">Paper Type</span>
+                            </a>
+                            @endcan
+
+                            @can('read', 'binding')
+                            <a class="menu-link"  href="{{ route('adminBinding') }}" >
+                                <span  class="menu-bullet" >
+                                    <span class="bullet bullet-dot"></span>
+                                </span>
+                                <span  class="menu-title">Binding</span>
+                            </a>
+                            @endcan
+
+                            @can('read', 'lamination')
+                            <a class="menu-link"  href="{{ route('adminLamination') }}" >
+                                <span  class="menu-bullet" >
+                                    <span class="bullet bullet-dot"></span>
+                                </span>
+                                <span  class="menu-title">Lamination</span>
+                            </a>
+                            @endcan
+
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 @can('read', 'site_settings')
                 <div class="menu-item here">            
                     <a href="{{ route('adminSiteSetting') }}" class="menu-link {{ $menu == 'site-settings'? 'active':''; }}">

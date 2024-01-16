@@ -9,6 +9,12 @@ use App\Http\Controllers\admin\Users;
 use App\Http\Controllers\admin\Roles;
 use App\Http\Controllers\admin\SiteSettings;
 
+use App\Http\Controllers\admin\Category;
+use App\Http\Controllers\admin\PaperSize;
+use App\Http\Controllers\admin\PaperType;
+use App\Http\Controllers\admin\Binding;
+use App\Http\Controllers\admin\Lamination;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -82,6 +88,76 @@ Route::prefix(config('admin.path'))->middleware('web')->group(function () {
             Route::post('/doUpdate', [Roles::class, 'doUpdate'])->name('adminDoUpdateRole');
             Route::post('/doDelete', [Roles::class, 'doDelete'])->name('adminDeleteRole');
             Route::post('/doBulkDelete', [Roles::class, 'doBulkDelete'])->name('adminBulkDeleteRole');
+        });
+
+        //Category
+        Route::prefix('category')->group(function() {
+            Route::get('/', [Category::class, 'index'])->name('adminCategory');
+            Route::get('/get', [Category::class, 'get'])->name('getAdminCategory');
+
+            Route::get('/add', [Category::class, 'add'])->name('adminAddCategory');
+            Route::get('/edit/{id}', [Category::class, 'edit'])->name('adminEditCategory');
+
+            Route::post('/doAdd', [Category::class, 'doAdd'])->name('adminDoAddCategory');
+            Route::post('/doUpdate', [Category::class, 'doUpdate'])->name('adminDoUpdateCategory');
+            Route::post('/doDelete', [Category::class, 'doDelete'])->name('adminDeleteCategory');
+            Route::post('/doBulkDelete', [Category::class, 'doBulkDelete'])->name('adminBulkDeleteCategory');
+        });
+
+        //Paper Size
+        Route::prefix('paper-size')->group(function() {
+            Route::get('/', [PaperSize::class, 'index'])->name('adminPaperSize');
+            Route::get('/get', [PaperSize::class, 'get'])->name('getAdminPaperSize');
+
+            Route::get('/add', [PaperSize::class, 'add'])->name('adminAddPaperSize');
+            Route::get('/edit/{id}', [PaperSize::class, 'edit'])->name('adminEditPaperSize');
+
+            Route::post('/doAdd', [PaperSize::class, 'doAdd'])->name('adminDoAddPaperSize');
+            Route::post('/doUpdate', [PaperSize::class, 'doUpdate'])->name('adminDoUpdatePaperSize');
+            Route::post('/doDelete', [PaperSize::class, 'doDelete'])->name('adminDeletePaperSize');
+            Route::post('/doBulkDelete', [PaperSize::class, 'doBulkDelete'])->name('adminBulkDeletePaperSize');
+        });
+
+        //Paper Type
+        Route::prefix('paper-type')->group(function() {
+            Route::get('/', [PaperType::class, 'index'])->name('adminPaperType');
+            Route::get('/get', [PaperType::class, 'get'])->name('getAdminPaperType');
+
+            Route::get('/add', [PaperType::class, 'add'])->name('adminAddPaperType');
+            Route::get('/edit/{id}', [PaperType::class, 'edit'])->name('adminEditPaperType');
+
+            Route::post('/doAdd', [PaperType::class, 'doAdd'])->name('adminDoAddPaperType');
+            Route::post('/doUpdate', [PaperType::class, 'doUpdate'])->name('adminDoUpdatePaperType');
+            Route::post('/doDelete', [PaperType::class, 'doDelete'])->name('adminDeletePaperType');
+            Route::post('/doBulkDelete', [PaperType::class, 'doBulkDelete'])->name('adminBulkDeletePaperType');
+        });
+
+        //Binding
+        Route::prefix('binding')->group(function() {
+            Route::get('/', [Binding::class, 'index'])->name('adminBinding');
+            Route::get('/get', [Binding::class, 'get'])->name('getAdminBinding');
+
+            Route::get('/add', [Binding::class, 'add'])->name('adminAddBinding');
+            Route::get('/edit/{id}', [Binding::class, 'edit'])->name('adminEditBinding');
+
+            Route::post('/doAdd', [Binding::class, 'doAdd'])->name('adminDoAddBinding');
+            Route::post('/doUpdate', [Binding::class, 'doUpdate'])->name('adminDoUpdateBinding');
+            Route::post('/doDelete', [Binding::class, 'doDelete'])->name('adminDeleteBinding');
+            Route::post('/doBulkDelete', [Binding::class, 'doBulkDelete'])->name('adminBulkDeleteBinding');
+        });
+
+        //Lamination
+        Route::prefix('lamination')->group(function() {
+            Route::get('/', [Lamination::class, 'index'])->name('adminLamination');
+            Route::get('/get', [Lamination::class, 'get'])->name('getAdminLamination');
+
+            Route::get('/add', [Lamination::class, 'add'])->name('adminAddLamination');
+            Route::get('/edit/{id}', [Lamination::class, 'edit'])->name('adminEditLamination');
+
+            Route::post('/doAdd', [Lamination::class, 'doAdd'])->name('adminDoAddLamination');
+            Route::post('/doUpdate', [Lamination::class, 'doUpdate'])->name('adminDoUpdateLamination');
+            Route::post('/doDelete', [Lamination::class, 'doDelete'])->name('adminDeleteLamination');
+            Route::post('/doBulkDelete', [Lamination::class, 'doBulkDelete'])->name('adminBulkDeleteLamination');
         });
 
         //Site Settings
