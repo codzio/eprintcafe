@@ -14,26 +14,28 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cookie;
 
+use App\Models\GsmModel;
 use App\Models\PaperSizeModel;
+use App\Models\PaperTypeModel;
 use App\Models\AdminModel;
 
-class PaperSize extends Controller {
+class Gsm extends Controller {
 
 	private $status = array();
 
 	public function index(Request $request) {
 
-		if (!can('read', 'paper-size')){
+		if (!can('read', 'gsm')){
 			return redirect(route('adminDashboard'));
 		}
 
 		$data = array(
-			'title' => 'Paper Size',
-			'pageTitle' => 'Paper Size',
-			'menu' => 'paper-size',
+			'title' => 'Paper GSM',
+			'pageTitle' => 'Paper GSM',
+			'menu' => 'gsm',
 		);
 
-		return view('admin/paper-size/index', $data);
+		return view('admin/gsm/index', $data);
 
 	}
 
@@ -42,7 +44,7 @@ class PaperSize extends Controller {
 
 			$draw = $request->get('draw');
 
-			if (!can('read', 'paper-size')){
+			if (!can('read', 'gsm')){
 				$response = array(
 			        "draw" => intval($draw),
 			        "iTotalRecords" => 0,
@@ -58,7 +60,7 @@ class PaperSize extends Controller {
 		    $rowperpage = $request->get("length"); // Rows display per page
 		    $inputName = $request->get('field');
 
-		    $singleDelUrl = route('adminDeletePaperSize');
+		    $singleDelUrl = route('adminDeleteGsm');
 
 		    //get type
 		    $columnIndex_arr = $request->get('order');
@@ -72,10 +74,16 @@ class PaperSize extends Controller {
 		    $searchValue = $search_arr['value']; // Search value
 
 		     // Total records
-		    $totalRecords = PaperSizeModel::select('count(*) as allcount');
+		    $totalRecords = GsmModel::
+		    join('paper_size', 'gsm.paper_size', '=', 'paper_size.id')
+		    ->join('paper_type', 'gsm.paper_type', '=', 'paper_type.id')
+		    ->select('count(*) as allcount');
 		    $totalRecords = $totalRecords->count();
 
-		    $totalRecordswithFilter = PaperSizeModel::select('count(*) as allcount');
+		    $totalRecordswithFilter = GsmModel::
+		    join('paper_size', 'gsm.paper_size', '=', 'paper_size.id')
+		    ->join('paper_type', 'gsm.paper_type', '=', 'paper_type.id')
+		    ->select('count(*) as allcount');
 
 		    // if (!empty($searchValue)) {
 		    // 	$totalRecordswithFilter->where('admins.name', 'like', '%' .$searchValue . '%');
@@ -84,9 +92,13 @@ class PaperSize extends Controller {
 		    if (!empty($searchValue)) {
 			    $totalRecordswithFilter->where(function ($query) use ($searchValue) {
 
-			        $query->where('paper_size.size', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('paper_size.slug', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('paper_size.measurement', 'like', '%' . $searchValue . '%');
+			        $query->where('gsm.gsm', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('gsm.weight', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('gsm.rate', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('gsm.paper_type_price', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('paper_size.size', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('paper_size.measurement', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('paper_type.paper_type', 'like', '%' . $searchValue . '%');
 
 			        // if (strtolower($searchValue) == 'active') {
 			        // 	$query->orWhere('category.is_active', 'like', '%1%');
@@ -100,7 +112,11 @@ class PaperSize extends Controller {
 		    $totalRecordswithFilter = $totalRecordswithFilter->count();
 
 		     // Fetch records
-		    $records = PaperSizeModel::select('paper_size.*')->skip($start)->take($rowperpage);
+		    $records = GsmModel::
+		    join('paper_size', 'gsm.paper_size', '=', 'paper_size.id')
+		    ->join('paper_type', 'gsm.paper_type', '=', 'paper_type.id')
+		    ->select('gsm.*', 'paper_size.size', 'paper_size.measurement', 'paper_type.paper_type')
+		    ->skip($start)->take($rowperpage);
 
 		    // if (!empty($searchValue)) {
 		    // 	$records->where('admins.name', 'like', '%' .$searchValue . '%');
@@ -109,9 +125,13 @@ class PaperSize extends Controller {
 		    if (!empty($searchValue)) {
 			    $records->where(function ($query) use ($searchValue) {
 			        
-			        $query->where('paper_size.size', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('paper_size.slug', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('paper_size.measurement', 'like', '%' . $searchValue . '%');
+			        $query->where('gsm.gsm', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('gsm.weight', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('gsm.rate', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('gsm.paper_type_price', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('paper_size.size', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('paper_size.measurement', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('paper_type.paper_type', 'like', '%' . $searchValue . '%');
 
 			        // if (strtolower($searchValue) == 'active') {
 			        // 	$query->orWhere('category.is_active', 'like', '%1%');
@@ -127,7 +147,7 @@ class PaperSize extends Controller {
 		    } elseif (!empty($columnName)) {
 		    	$records->orderBy($columnName, 'desc');	
 		    } else {
-		    	$records->orderBy('paper_size.id','desc');
+		    	$records->orderBy('gsm.id','desc');
 		    }
 
 		    $records = $records->get();
@@ -138,7 +158,7 @@ class PaperSize extends Controller {
 		    	foreach($records as $record){
 			        $id = $record->id;
 
-			        $editUrl = route('adminEditPaperSize', $id);
+			        $editUrl = route('adminEditGsm', $id);
 
 			        $checkbox = '<div onclick="checkCheckbox(this)" class="form-check form-check-sm form-check-custom form-check-solid">
 							<input name="delete[]" data-kt-check-target="#media .single-check-input" class="form-check-input" type="checkbox" value="'.$id.'" />
@@ -174,9 +194,13 @@ class PaperSize extends Controller {
 
 			        $data_arr[] = array(
 			        	"checkbox" => $checkbox,
-			          	"size" => $record->size,
-			          	"slug" => $record->slug,
+			          	"paper_size" => $record->size,
 			          	"measurement" => $record->measurement,
+			          	"gsm" => $record->gsm,
+			          	"weight" => $record->weight,
+			          	"rate" => $record->rate,
+			          	"paper_type" => $record->paper_type,
+			          	"paper_type_price" => $record->paper_type_price,
 			          	"action" => $action
 			        );
 			    }
@@ -205,47 +229,64 @@ class PaperSize extends Controller {
 
 	public function add(Request $request) {
 
-		if (!can('create', 'paper-size')){
-			return redirect(route('adminPaperSize'));
+		if (!can('create', 'gsm')){
+			return redirect(route('adminGsm'));
 		}
 
+		$getPaperSize = PaperSizeModel::get();
+		$getPaperType = PaperTypeModel::get();
+
 		$data = array(
-			'title' => 'Paper Size',
-			'pageTitle' => 'Paper Size',
-			'menu' => 'paper-size',
+			'title' => 'Paper GSM',
+			'pageTitle' => 'Paper GSM',
+			'menu' => 'gsm',
+			'paperSize' => $getPaperSize,
+			'paperType' => $getPaperType,
 		);
 
-		return view('admin/paper-size/add', $data);
+		return view('admin/gsm/add', $data);
 	}
 
 	
 	public function edit($id) {
 
-		if (!can('update', 'paper-size')){
-			return redirect(route('adminPaperSize'));
+		if (!can('update', 'gsm')){
+			return redirect(route('adminGsm'));
 		}
 
-		$getData = PaperSizeModel::where(['id' => $id])->first();
+		$getData = GsmModel::
+		join('paper_size', 'gsm.paper_size', '=', 'paper_size.id')
+		->select('gsm.*', 'paper_size.size', 'paper_size.measurement')
+		->where(['gsm.id' => $id])->first();
 
 		if (empty($getData)) {
-			return redirect(route('adminPaperSize'));
+			return redirect(route('adminGsm'));
 		}
 
+		$getPaperSize = PaperSizeModel::get();
+		$getPaperType = PaperTypeModel::get();
+
+		// echo "<pre>";
+		// print_r($getData);
+		// die();
+
 		$data = array(
-			'title' => 'Paper Size',
-			'pageTitle' => 'Paper Size',
-			'menu' => 'paper-size',
-			'paperSize' => $getData
+			'title' => 'Paper GSM',
+			'pageTitle' => 'Paper GSM',
+			'menu' => 'gsm',
+			'gsm' => $getData,
+			'paperSize' => $getPaperSize,
+			'paperType' => $getPaperType,
 		);
 
-		return view('admin/paper-size/edit', $data);
+		return view('admin/gsm/edit', $data);
 
 	}
 
 	public function doAdd(Request $request) {
 		if ($request->ajax()) {
 
-			if (!can('create', 'paper-size')){
+			if (!can('create', 'gsm')){
 				
 				$this->status = array(
 					'error' => true,
@@ -258,9 +299,12 @@ class PaperSize extends Controller {
 			}
 
 			$validator = Validator::make($request->post(), [
-	            'name' => 'required|unique:paper_size,size',
-	            'slug' => 'required|unique:paper_size,slug',
-	            'measurement' => 'required|numeric'
+				'paperSize' => 'required|numeric',
+	            'gsm' => 'required|numeric',
+	            'weight' => 'required|numeric',
+	            'rate' => 'required|numeric',
+	            'paperType' => 'required|numeric',
+	            'paperTypePrice' => 'required|numeric',
 	        ]);
 
 	        if ($validator->fails()) {
@@ -276,27 +320,49 @@ class PaperSize extends Controller {
 
 	        } else {
 
-	        	$obj = [
-	        		'admin_id' => adminId(),
-	        		'size' => $request->post('name'),
-	        		'slug' => $request->post('slug'),
-	        		'measurement' => $request->post('measurement'),
-	        	];
+	        	$paperSize = $request->post('paperSize');
+	        	$gsm = $request->post('gsm');
+	        	$paperType = $request->post('paperType');
 
-	        	$isAdded = PaperSizeModel::create($obj);
+	        	//check if paper size and gsm exist
+	        	$isExist = GsmModel::where(['paper_size' => $paperSize, 'gsm' => $gsm, 'paper_type' => $paperType])->first();
 
-	        	if ($isAdded) {
-    				$this->status = array(
-						'error' => false,								
-						'msg' => 'Paper Size has been added successfully.'
-					);
-    			} else {
-    				$this->status = array(
+	        	if (empty($isExist)) {
+	        		
+	        		$obj = [
+		        		'admin_id' => adminId(),
+		        		'paper_size' => $paperSize,
+		        		'gsm' => $request->post('gsm'),
+		        		'weight' => $request->post('weight'),
+		        		'rate' => $request->post('rate'),
+		        		'paper_type' => $request->post('paperType'),
+		        		'paper_type_price' => $request->post('paperTypePrice'),
+		        	];
+
+		        	$isAdded = GsmModel::create($obj);
+
+		        	if ($isAdded) {
+	    				$this->status = array(
+							'error' => false,								
+							'msg' => 'GSM has been added successfully.'
+						);
+	    			} else {
+	    				$this->status = array(
+							'error' => true,
+							'eType' => 'final',
+							'msg' => 'Something went wrong.'
+						);
+	    			}
+
+	        	} else {
+
+	        		$this->status = array(
 						'error' => true,
 						'eType' => 'final',
-						'msg' => 'Something went wrong.'
+						'msg' => 'The GSM is already added.'
 					);
-    			}
+
+	        	}
 
 	        }
 
@@ -315,7 +381,7 @@ class PaperSize extends Controller {
 	public function doUpdate(Request $request) {
 		if ($request->ajax()) {
 
-			if (!can('update', 'paper-size')){
+			if (!can('update', 'gsm')){
 				
 				$this->status = array(
 					'error' => true,
@@ -329,10 +395,13 @@ class PaperSize extends Controller {
 			$id = $request->post('id');
 
 	        $validator = Validator::make($request->post(), [
-	        	'id' => 'required|numeric',
-	            'name' => 'required|unique:paper_size,size,'.$id,
-	            'slug' => 'required|unique:paper_size,slug,'.$id,
-	            'measurement' => 'required|numeric'
+	        	'id' => 'required|numeric|exists:gsm,id',
+	            'paperSize' => 'required|numeric',
+	            'gsm' => 'required|numeric',
+	            'weight' => 'required|numeric',
+	            'rate' => 'required|numeric',
+	            'paperType' => 'required|numeric',
+	            'paperTypePrice' => 'required|numeric',
 	        ]);
 
 	        if ($validator->fails()) {
@@ -348,40 +417,53 @@ class PaperSize extends Controller {
 
 	        } else {
 
-	        	$getPaperSize = PaperSizeModel::where(['id' => $id])->first();
-	        	
-	        	if (empty($getPaperSize)) {
-	        		
+	        	$paperSize = $request->post('paperSize');
+	        	$gsm = $request->post('gsm');
+	        	$paperType = $request->post('paperType');
+	        	$id = $request->post('id');
+
+	        	//check if paper size and gsm exist
+	        	$isExist = GsmModel::where(['paper_size' => $paperSize, 'gsm' => $gsm, 'paper_type' => $paperType])->where('id', '!=', $id)->first();
+
+	        	if (empty($isExist)) {
+
+	        		$obj = [
+		        		'paper_size' => $paperSize,
+		        		'gsm' => $request->post('gsm'),
+		        		'weight' => $request->post('weight'),
+		        		'rate' => $request->post('rate'),
+		        		'paper_type' => $request->post('paperType'),
+		        		'paper_type_price' => $request->post('paperTypePrice'),
+		        	];
+
+	        		$isUpdated = GsmModel::where('id', $id)->update($obj);
+
+		        	if ($isUpdated) {
+	    				
+	    				$this->status = array(
+							'error' => false,								
+							'msg' => 'Gsm has been updated successfully.'
+						);
+
+	    			} else {
+
+	    				$this->status = array(
+							'error' => true,
+							'eType' => 'final',
+							'msg' => 'Something went wrong.'
+						);
+
+	    			}
+
+	        	} else {
+
 	        		$this->status = array(
 						'error' => true,
 						'eType' => 'final',
-						'msg' => 'Something went wrong'
+						'msg' => 'The GSM is already added.'
 					);
 
-					return json_encode($this->status);
 	        	}
-
-	        	$getPaperSize->size = $request->post('name');
-	        	$getPaperSize->slug = $request->post('slug');
-	        	$getPaperSize->measurement = $request->post('measurement');
-	        	$isUpdated = $getPaperSize->save();
-
-	        	if ($isUpdated) {
-    				
-    				$this->status = array(
-						'error' => false,								
-						'msg' => 'Paper size has been updated successfully.'
-					);
-
-    			} else {
-
-    				$this->status = array(
-						'error' => true,
-						'eType' => 'final',
-						'msg' => 'Something went wrong.'
-					);
-
-    			}
 
 	        }
 
@@ -400,7 +482,7 @@ class PaperSize extends Controller {
 	public function doDelete(Request $request) {
 		if ($request->ajax()) {
 
-			if (!can('delete', 'paper-size')){
+			if (!can('delete', 'gsm')){
 				
 				$this->status = array(
 					'error' => true,
@@ -432,16 +514,16 @@ class PaperSize extends Controller {
 	        	$id = $request->post('id');
 
 	        	//check if data exist
-	        	$getData = PaperSizeModel::where('id', '=', $id)->first();	        	
+	        	$getData = GsmModel::where('id', '=', $id)->first();	        	
 	        	
 	        	if (!empty($getData)) {
 	        		
-	        		$isDeleted = PaperSizeModel::where('id', $id)->delete();
+	        		$isDeleted = GsmModel::where('id', $id)->delete();
 
         			if ($isDeleted) {
         				$this->status = array(
 							'error' => false,								
-							'msg' => 'Paper size has been deleted successfully.'
+							'msg' => 'Gsm has been deleted successfully.'
 						);
         			} else {
         				$this->status = array(
@@ -475,7 +557,7 @@ class PaperSize extends Controller {
 		if ($request->ajax()) {
 
 			//check permissions
-			if (!can('delete', 'paper-size')){
+			if (!can('delete', 'gsm')){
 				$this->status = array(
 					'error' => true,
 					'eType' => 'final',
@@ -504,16 +586,16 @@ class PaperSize extends Controller {
 	        	$ids = $request->post('ids');
 
 	        	//check if data exist
-	        	$getData = PaperSizeModel::whereIn('id', $ids)->get();	        	
+	        	$getData = GsmModel::whereIn('id', $ids)->get();	        	
 	        	
 	        	if (!empty($getData)) {
 
-	        		$isDeleted = PaperSizeModel::whereIn('id', $ids)->delete();
+	        		$isDeleted = GsmModel::whereIn('id', $ids)->delete();
 	        		
 	        		if ($isDeleted) {
         				$this->status = array(
 							'error' => false,								
-							'msg' => 'Paper size has been deleted successfully.'
+							'msg' => 'Gsm has been deleted successfully.'
 						);
         			} else {
         				$this->status = array(

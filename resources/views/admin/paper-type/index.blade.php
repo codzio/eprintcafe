@@ -53,7 +53,7 @@
                                                 <input onclick="bulkSelectData(this)" class="form-check-input" type="checkbox" data-kt-check="false" value="1" />
                                             </div>
                                         </th>
-                                        <th class="min-w-100px">Paper Size</th>
+                                        <!-- <th class="min-w-100px">Paper Size</th> -->
                                         <th class="min-w-100px">Paper Type</th>
                                         <th class="min-w-100px">Paper Type Slug</th>
                                         <th class="w-125px">Action</th>

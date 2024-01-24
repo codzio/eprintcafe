@@ -14,26 +14,28 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cookie;
 
-use App\Models\PaperSizeModel;
+use App\Models\ProductModel;
+use App\Models\PricingModel;
+use App\Models\CategoryModel;
 use App\Models\AdminModel;
 
-class PaperSize extends Controller {
+class Product extends Controller {
 
 	private $status = array();
 
 	public function index(Request $request) {
 
-		if (!can('read', 'paper-size')){
+		if (!can('read', 'product')){
 			return redirect(route('adminDashboard'));
 		}
 
 		$data = array(
-			'title' => 'Paper Size',
-			'pageTitle' => 'Paper Size',
-			'menu' => 'paper-size',
+			'title' => 'Product',
+			'pageTitle' => 'Product',
+			'menu' => 'product',
 		);
 
-		return view('admin/paper-size/index', $data);
+		return view('admin/product/index', $data);
 
 	}
 
@@ -42,7 +44,7 @@ class PaperSize extends Controller {
 
 			$draw = $request->get('draw');
 
-			if (!can('read', 'paper-size')){
+			if (!can('read', 'product')){
 				$response = array(
 			        "draw" => intval($draw),
 			        "iTotalRecords" => 0,
@@ -58,7 +60,7 @@ class PaperSize extends Controller {
 		    $rowperpage = $request->get("length"); // Rows display per page
 		    $inputName = $request->get('field');
 
-		    $singleDelUrl = route('adminDeletePaperSize');
+		    $singleDelUrl = route('adminDeleteProduct');
 
 		    //get type
 		    $columnIndex_arr = $request->get('order');
@@ -72,10 +74,10 @@ class PaperSize extends Controller {
 		    $searchValue = $search_arr['value']; // Search value
 
 		     // Total records
-		    $totalRecords = PaperSizeModel::select('count(*) as allcount');
+		    $totalRecords = ProductModel::join('category', 'product.category_id', '=', 'category.id')->select('count(*) as allcount');
 		    $totalRecords = $totalRecords->count();
 
-		    $totalRecordswithFilter = PaperSizeModel::select('count(*) as allcount');
+		    $totalRecordswithFilter = ProductModel::join('category', 'product.category_id', '=', 'category.id')->select('count(*) as allcount');
 
 		    // if (!empty($searchValue)) {
 		    // 	$totalRecordswithFilter->where('admins.name', 'like', '%' .$searchValue . '%');
@@ -84,15 +86,17 @@ class PaperSize extends Controller {
 		    if (!empty($searchValue)) {
 			    $totalRecordswithFilter->where(function ($query) use ($searchValue) {
 
-			        $query->where('paper_size.size', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('paper_size.slug', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('paper_size.measurement', 'like', '%' . $searchValue . '%');
+			        $query->where('category.category_name', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('category.category_slug', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('product.name', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('product.slug', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('product.description', 'like', '%' . $searchValue . '%');
 
-			        // if (strtolower($searchValue) == 'active') {
-			        // 	$query->orWhere('category.is_active', 'like', '%1%');
-			        // } elseif (strtolower($searchValue) == 'inactive') {
-			        // 	$query->orWhere('category.is_active', 'like', '%0%');
-			        // }
+			        if (strtolower($searchValue) == 'active') {
+			        	$query->orWhere('product.is_active', 'like', '%1%');
+			        } elseif (strtolower($searchValue) == 'inactive') {
+			        	$query->orWhere('product.is_active', 'like', '%0%');
+			        }
 
 			    });
 			}
@@ -100,7 +104,7 @@ class PaperSize extends Controller {
 		    $totalRecordswithFilter = $totalRecordswithFilter->count();
 
 		     // Fetch records
-		    $records = PaperSizeModel::select('paper_size.*')->skip($start)->take($rowperpage);
+		    $records = ProductModel::join('category', 'product.category_id', '=', 'category.id')->select('product.*', 'category.category_name')->skip($start)->take($rowperpage);
 
 		    // if (!empty($searchValue)) {
 		    // 	$records->where('admins.name', 'like', '%' .$searchValue . '%');
@@ -109,15 +113,17 @@ class PaperSize extends Controller {
 		    if (!empty($searchValue)) {
 			    $records->where(function ($query) use ($searchValue) {
 			        
-			        $query->where('paper_size.size', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('paper_size.slug', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('paper_size.measurement', 'like', '%' . $searchValue . '%');
+			        $query->where('category.category_name', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('category.category_slug', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('product.name', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('product.slug', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('product.description', 'like', '%' . $searchValue . '%');
 
-			        // if (strtolower($searchValue) == 'active') {
-			        // 	$query->orWhere('category.is_active', 'like', '%1%');
-			        // } elseif (strtolower($searchValue) == 'inactive') {
-			        // 	$query->orWhere('category.is_active', 'like', '%0%');
-			        // }
+			        if (strtolower($searchValue) == 'active') {
+			        	$query->orWhere('product.is_active', 'like', '%1%');
+			        } elseif (strtolower($searchValue) == 'inactive') {
+			        	$query->orWhere('product.is_active', 'like', '%0%');
+			        }
 
 			    });
 			}
@@ -127,7 +133,7 @@ class PaperSize extends Controller {
 		    } elseif (!empty($columnName)) {
 		    	$records->orderBy($columnName, 'desc');	
 		    } else {
-		    	$records->orderBy('paper_size.id','desc');
+		    	$records->orderBy('product.id','desc');
 		    }
 
 		    $records = $records->get();
@@ -138,7 +144,8 @@ class PaperSize extends Controller {
 		    	foreach($records as $record){
 			        $id = $record->id;
 
-			        $editUrl = route('adminEditPaperSize', $id);
+			        $editUrl = route('adminEditProduct', $id);
+			        $pricingUrl = route('adminPricing', $id);
 
 			        $checkbox = '<div onclick="checkCheckbox(this)" class="form-check form-check-sm form-check-custom form-check-solid">
 							<input name="delete[]" data-kt-check-target="#media .single-check-input" class="form-check-input" type="checkbox" value="'.$id.'" />
@@ -149,6 +156,12 @@ class PaperSize extends Controller {
 						<div class="d-flex justify-content-end">
 							<div class="ms-2">
 								<div class="menu menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-150px py-4" data-kt-menu="true">
+
+									<div class="menu-item">
+										<a title="Pricing" href="'.$pricingUrl.'" class="menu-link px-3">
+											<span class="menu-icon"><i class="ki-outline ki-eye fs-2"></i></span>
+										</a>
+									</div>
 									
 									<div class="menu-item">
 										<a title="Edit" href="'.$editUrl.'" class="menu-link px-3">
@@ -166,17 +179,18 @@ class PaperSize extends Controller {
 						</div>
 					</td>';
 
-					// if ($record->is_active) {
-					// 	$status = '<div class="badge badge-success">Active</div>';
-					// } else {
-					// 	$status = '<div class="badge badge-danger">Inactive</div>';
-					// }
+					if ($record->is_active) {
+						$status = '<div class="badge badge-success">Active</div>';
+					} else {
+						$status = '<div class="badge badge-danger">Inactive</div>';
+					}
 
 			        $data_arr[] = array(
 			        	"checkbox" => $checkbox,
-			          	"size" => $record->size,
+			          	"category" => $record->category_name,
+			          	"product" => $record->name,
 			          	"slug" => $record->slug,
-			          	"measurement" => $record->measurement,
+			          	"status" => $status,
 			          	"action" => $action
 			        );
 			    }
@@ -205,47 +219,73 @@ class PaperSize extends Controller {
 
 	public function add(Request $request) {
 
-		if (!can('create', 'paper-size')){
-			return redirect(route('adminPaperSize'));
+		if (!can('create', 'product')){
+			return redirect(route('adminProduct'));
 		}
 
+		$categoryList = CategoryModel::where('is_active', 1)->get();
+		$productImg = url('public/backend/media/svg/avatars/blank.svg');
+
 		$data = array(
-			'title' => 'Paper Size',
-			'pageTitle' => 'Paper Size',
-			'menu' => 'paper-size',
+			'title' => 'Product',
+			'pageTitle' => 'Product',
+			'menu' => 'product',
+			'allowMedia' => true,
+			'editor' => true,
+			'productImg' => $productImg,
+			'categoryList' => $categoryList
 		);
 
-		return view('admin/paper-size/add', $data);
+		return view('admin/product/add', $data);
 	}
 
 	
 	public function edit($id) {
 
-		if (!can('update', 'paper-size')){
-			return redirect(route('adminPaperSize'));
+		if (!can('update', 'product')){
+			return redirect(route('adminProduct'));
 		}
 
-		$getData = PaperSizeModel::where(['id' => $id])->first();
+		$getData = ProductModel::where(['id' => $id])->first();
 
 		if (empty($getData)) {
-			return redirect(route('adminPaperSize'));
+			return redirect(route('adminProduct'));
+		}
+
+		$categoryList = CategoryModel::where('is_active', 1)->get();
+
+		$productImg = url('public/backend/media/svg/avatars/blank.svg');
+
+		if (getImg($getData->thumbnail_id)) {
+			$productImg = getImg($getData->thumbnail_id);
+		}
+
+		$galleryImgs = [];
+
+		if (!empty($getData->gallery_images)) {
+			$galleryImgs = json_decode($getData->gallery_images);
 		}
 
 		$data = array(
-			'title' => 'Paper Size',
-			'pageTitle' => 'Paper Size',
-			'menu' => 'paper-size',
-			'paperSize' => $getData
+			'title' => 'Product',
+			'pageTitle' => 'Product',
+			'menu' => 'product',
+			'allowMedia' => true,
+			'editor' => true,
+			'product' => $getData,
+			'categoryList' => $categoryList,
+			'productImg' => $productImg,
+			'galleryImgs' => $galleryImgs,
 		);
 
-		return view('admin/paper-size/edit', $data);
+		return view('admin/product/edit', $data);
 
 	}
 
 	public function doAdd(Request $request) {
 		if ($request->ajax()) {
 
-			if (!can('create', 'paper-size')){
+			if (!can('create', 'product')){
 				
 				$this->status = array(
 					'error' => true,
@@ -258,9 +298,13 @@ class PaperSize extends Controller {
 			}
 
 			$validator = Validator::make($request->post(), [
-	            'name' => 'required|unique:paper_size,size',
-	            'slug' => 'required|unique:paper_size,slug',
-	            'measurement' => 'required|numeric'
+				'category' => 'required|numeric|exists:category,id',
+	            'name' => 'required',
+	            'slug' => 'required|unique:product,slug',
+	            'description' => 'required',
+	            'status' => 'required|numeric|in:0,1',
+	            'productImg' => 'required|numeric',
+	            'galleryImages' => 'sometimes|nullable'
 	        ]);
 
 	        if ($validator->fails()) {
@@ -276,19 +320,29 @@ class PaperSize extends Controller {
 
 	        } else {
 
+	        	$galleryImgs = [];
+
+	        	if ($request->post('galleryImages')) {
+	        		$galleryImgs = json_encode($request->post('galleryImages'));
+	        	}
+
 	        	$obj = [
 	        		'admin_id' => adminId(),
-	        		'size' => $request->post('name'),
-	        		'slug' => $request->post('slug'),
-	        		'measurement' => $request->post('measurement'),
+	        		'name' => $request->post('name'),
+	        		'slug' => Str::slug($request->post('slug')),
+	        		'category_id' => $request->post('category'),
+	        		'description' => $request->post('description'),
+	        		'thumbnail_id' => $request->post('productImg'),
+	        		'gallery_images' => $galleryImgs,
+	        		'is_active' => $request->post('status'),
 	        	];
 
-	        	$isAdded = PaperSizeModel::create($obj);
+	        	$isAdded = ProductModel::create($obj);
 
 	        	if ($isAdded) {
     				$this->status = array(
 						'error' => false,								
-						'msg' => 'Paper Size has been added successfully.'
+						'msg' => 'Product has been added successfully.'
 					);
     			} else {
     				$this->status = array(
@@ -315,7 +369,7 @@ class PaperSize extends Controller {
 	public function doUpdate(Request $request) {
 		if ($request->ajax()) {
 
-			if (!can('update', 'paper-size')){
+			if (!can('update', 'product')){
 				
 				$this->status = array(
 					'error' => true,
@@ -330,9 +384,13 @@ class PaperSize extends Controller {
 
 	        $validator = Validator::make($request->post(), [
 	        	'id' => 'required|numeric',
-	            'name' => 'required|unique:paper_size,size,'.$id,
-	            'slug' => 'required|unique:paper_size,slug,'.$id,
-	            'measurement' => 'required|numeric'
+				'category' => 'required|numeric|exists:category,id',
+	            'name' => 'required',
+	            'slug' => 'required|unique:product,slug,'.$id,
+	            'description' => 'required',
+	            'status' => 'required|numeric|in:0,1',
+	            'productImg' => 'required|numeric',
+	            'galleryImages' => 'sometimes|nullable'
 	        ]);
 
 	        if ($validator->fails()) {
@@ -348,9 +406,9 @@ class PaperSize extends Controller {
 
 	        } else {
 
-	        	$getPaperSize = PaperSizeModel::where(['id' => $id])->first();
+	        	$getProduct = ProductModel::where(['id' => $id])->first();
 	        	
-	        	if (empty($getPaperSize)) {
+	        	if (empty($getProduct)) {
 	        		
 	        		$this->status = array(
 						'error' => true,
@@ -361,16 +419,26 @@ class PaperSize extends Controller {
 					return json_encode($this->status);
 	        	}
 
-	        	$getPaperSize->size = $request->post('name');
-	        	$getPaperSize->slug = $request->post('slug');
-	        	$getPaperSize->measurement = $request->post('measurement');
-	        	$isUpdated = $getPaperSize->save();
+	        	$galleryImgs = [];
+
+	        	if ($request->post('galleryImages')) {
+	        		$galleryImgs = json_encode($request->post('galleryImages'));
+	        	}
+
+	        	$getProduct->name = $request->post('name');
+	        	$getProduct->slug = Str::slug($request->post('slug'));
+	        	$getProduct->category_id = $request->post('category');
+	        	$getProduct->description = $request->post('description');
+	        	$getProduct->thumbnail_id = $request->post('productImg');
+	        	$getProduct->gallery_images = $galleryImgs;
+	        	$getProduct->is_active = $request->post('status');
+	        	$isUpdated = $getProduct->save();
 
 	        	if ($isUpdated) {
     				
     				$this->status = array(
 						'error' => false,								
-						'msg' => 'Paper size has been updated successfully.'
+						'msg' => 'Product has been updated successfully.'
 					);
 
     			} else {
@@ -400,7 +468,7 @@ class PaperSize extends Controller {
 	public function doDelete(Request $request) {
 		if ($request->ajax()) {
 
-			if (!can('delete', 'paper-size')){
+			if (!can('delete', 'product')){
 				
 				$this->status = array(
 					'error' => true,
@@ -432,16 +500,20 @@ class PaperSize extends Controller {
 	        	$id = $request->post('id');
 
 	        	//check if data exist
-	        	$getData = PaperSizeModel::where('id', '=', $id)->first();	        	
+	        	$getData = ProductModel::where('id', '=', $id)->first();	        	
 	        	
 	        	if (!empty($getData)) {
-	        		
-	        		$isDeleted = PaperSizeModel::where('id', $id)->delete();
+
+	        		//Delete all pricing
+	        		$deletePricing = PricingModel::where('product_id', $id)->delete();
+	        			
+	        		//Delete Product
+	        		$isDeleted = ProductModel::where('id', $id)->delete();
 
         			if ($isDeleted) {
         				$this->status = array(
 							'error' => false,								
-							'msg' => 'Paper size has been deleted successfully.'
+							'msg' => 'Gsm has been deleted successfully.'
 						);
         			} else {
         				$this->status = array(
@@ -475,7 +547,7 @@ class PaperSize extends Controller {
 		if ($request->ajax()) {
 
 			//check permissions
-			if (!can('delete', 'paper-size')){
+			if (!can('delete', 'product')){
 				$this->status = array(
 					'error' => true,
 					'eType' => 'final',
@@ -504,16 +576,20 @@ class PaperSize extends Controller {
 	        	$ids = $request->post('ids');
 
 	        	//check if data exist
-	        	$getData = PaperSizeModel::whereIn('id', $ids)->get();	        	
+	        	$getData = ProductModel::whereIn('id', $ids)->get();	        	
 	        	
 	        	if (!empty($getData)) {
 
-	        		$isDeleted = PaperSizeModel::whereIn('id', $ids)->delete();
+	        		//Delete all Pricing
+	        		$deletePricing = PricingModel::whereIn('product_id', $ids)->delete();
+
+	        		//Delete Product
+	        		$isDeleted = ProductModel::whereIn('id', $ids)->delete();
 	        		
 	        		if ($isDeleted) {
         				$this->status = array(
 							'error' => false,								
-							'msg' => 'Paper size has been deleted successfully.'
+							'msg' => 'Gsm has been deleted successfully.'
 						);
         			} else {
         				$this->status = array(

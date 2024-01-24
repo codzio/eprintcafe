@@ -24,15 +24,27 @@ $.ajaxSetup({
 var table = $('#kt_file_manager_list').DataTable({
     "processing": true,
     "serverSide": true,
-    "ajax": dataUrl,
+    "ajax": {
+        'url': dataUrl,
+        'data': {
+            id: productId
+        }
+    },
     "pageLength": 10,
     "deferRender": true,
     // "stateSave": true,
     "columns": [
         { "orderable": false, "searchable": false, "data": "checkbox" },
-        { "data": "size" },
-        { "data": "slug" },
-        { "data": "measurement" },
+        { "data": "paper_size" },
+        { "data": "gsm" },
+        { "data": "paper_type" },
+        { "data": "side" },
+        { "data": "color" },
+        { "data": "weight" },
+        { "data": "rate" },
+        { "data": "paper_price" },
+        { "data": "other_price" },
+        { "data": "total" },
         { "orderable": false, "searchable": false, "data": "action" }
     ]
 });
@@ -283,13 +295,93 @@ $('.disallow').click(function(event) {
     }); 
 });
 
-function generateSlug(el, id) {
-    var inputValue = $(el).val()
-    var slug = inputValue
-        .toLowerCase()
-        .replace(/[^a-z0-9 -]/g, '')   // Remove invalid characters
-        .replace(/\s+/g, '-')          // Replace spaces with hyphens
-        .replace(/-+/g, '-');          // Replace multiple hyphens with a single hyphen
+//Other Functions
+$("#paperSize").change(function(event) {
+    paperSize = $(this).find(':selected').val();
+    url = $(this).find(':selected').attr('data-url');
 
-    $(id).attr('value', slug);
-}
+    $.ajax({
+        url: url,
+        type: 'POST',
+        dataType: 'json',
+        data: {paperSize: paperSize},
+        beforeSend: function() {
+            
+            $("#paperGsm").select2();
+
+        }, success: function(res) {
+
+            $("#paperGsm").html(res.options);
+            //$("#paperGsm").select2();
+
+        }
+    });
+});
+
+$("#paperGsm").change(function(event) {
+    paperSize = $("#paperSize").find(':selected').val();
+    paperGsm = $(this).find(':selected').val();
+    url = $(this).find(':selected').attr('data-url');
+
+    $.ajax({
+        url: url,
+        type: 'POST',
+        dataType: 'json',
+        data: {
+            paperSize: paperSize,
+            paperGsm: paperGsm,
+        },
+        beforeSend: function() {
+            
+            $("#paperType").select2();
+            $("#perSheetPrice").val('');
+            $("#paperSizePrice").val('');
+            $("#totalPrice").val('');
+
+        }, success: function(res) {
+
+            $("#paperType").html(res.options);
+            $("#paperType").select2();
+
+        }
+    });
+});
+
+$("#paperType").change(function (e) {
+    paperSize = $("#paperSize").find(':selected').val();
+    paperGsm = $("#paperGsm").find(':selected').val();
+    paperType = $("#paperType").find(':selected').val();
+    url = $(this).find(':selected').attr('data-url');
+
+    $.ajax({
+        url: url,
+        type: 'POST',
+        dataType: 'json',
+        data: {
+            paperSize: paperSize,
+            paperGsm: paperGsm,
+            paperType: paperType,
+        },
+        beforeSend: function() {
+                    
+
+        }, success: function(res) {
+
+            if (res.error == false) {
+                $("#perSheetPrice").val(res.perSheetPrice);
+                $("#paperSizePrice").val(res.paperTypePrice);
+            }
+
+        }
+    });
+});
+
+$("#otherPrice").change(function(event) {
+    var perSheetPrice = $("#perSheetPrice").val();
+    var paperSizePrice = $("#paperSizePrice").val();
+    var otherPrice = $("#otherPrice").val();
+
+    total = parseFloat(perSheetPrice)+parseFloat(paperSizePrice)+parseFloat(otherPrice);
+    $("#totalPrice").val(total);
+
+});

@@ -47,6 +47,18 @@
                             </div>                    
                         </div>
 
+                        <div class="row mb-6">                    
+                            <label class="col-lg-3 col-form-label fw-semibold fs-6 required">Measurement</label>
+                            <div class="col-lg-9">                        
+                                <div class="row">
+                                    <div class="col-lg-12 fv-row">
+                                        <input step="0.01" id="measurement" type="number" name="measurement" class="form-control form-control-lg form-control-solid mb-3 mb-lg-0" placeholder="Measurement" value="">
+                                        <span id="measurementErr" class="text-danger"></span>
+                                    </div>                            
+                                </div>
+                            </div>                    
+                        </div>
+
                     </div>
 
                     <div class="d-flex justify-content-end py-6 px-9">

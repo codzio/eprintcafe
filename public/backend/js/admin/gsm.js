@@ -30,9 +30,13 @@ var table = $('#kt_file_manager_list').DataTable({
     // "stateSave": true,
     "columns": [
         { "orderable": false, "searchable": false, "data": "checkbox" },
-        { "data": "size" },
-        { "data": "slug" },
+        { "data": "paper_size" },
         { "data": "measurement" },
+        { "data": "gsm" },
+        { "data": "weight" },
+        { "data": "rate" },
+        { "data": "paper_type" },
+        { "data": "paper_type_price" },
         { "orderable": false, "searchable": false, "data": "action" }
     ]
 });

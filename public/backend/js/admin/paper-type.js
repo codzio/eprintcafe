@@ -30,7 +30,7 @@ var table = $('#kt_file_manager_list').DataTable({
     // "stateSave": true,
     "columns": [
         { "orderable": false, "searchable": false, "data": "checkbox" },
-        { "data": "size" },
+        // { "data": "size" },
         { "data": "paper_type" },
         { "data": "paper_type_slug" },
         { "orderable": false, "searchable": false, "data": "action" }

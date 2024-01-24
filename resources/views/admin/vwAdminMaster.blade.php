@@ -31,6 +31,19 @@
                 window.top.location.replace(window.self.location.href);
             }
         </script>
+
+        @if(isset($editor) && $editor)
+        <script src="https://cdn.tiny.cloud/1/r22x6ervjq57zyw7ir7bmn1t7vbuoo2t419ium62xoeakdul/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+
+        <script>
+          tinymce.init({
+            selector: '.editor',
+            plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
+            toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+          });
+        </script>
+        @endif
+        
     </head>
     <!--end::Head-->
 

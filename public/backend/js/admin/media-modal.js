@@ -308,11 +308,32 @@ const insertMedia = (el) => {
         $(inputName+"Display").css('background-image', 'url(' + mediaPath + ')');
         $(inputName+'RemoveBtn').css('display', 'inline-flex');
         $(inputName).val(id);
+        toastr.success('The image has been added successfully.');
         $("#kt_app_engage_prebuilts_modal").modal('hide');
 
     } else {
 
+        autoId = Math.floor(Math.random() * 26) + Date.now();
+        $("#sortable").append(`
+            <div id="box-${autoId}" class="draggable" draggable="true">
+                <div class="image-input image-input-outline" data-kt-image-input="true" style="background-image: url('../public/backend/media/svg/avatars/blank.svg')">
 
+                    <div id="galleryImages${autoId}" class="image-input-wrapper w-125px h-125px" style="background-image: url('${mediaPath}')"></div>
+                    
+                    <label class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow" data-kt-image-input-action="change" title="Remove" onclick="removeMedia({field: '#box-${autoId}', multiple: true})">
+                        <i class="ki-outline ki-cross fs-2"></i>
+                    </label>
+
+                    <span class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow" data-kt-image-input-action="cancel" data-bs-toggle="tooltip" title="Remove">
+                        <i class="ki-outline ki-cross fs-2"></i>
+                    </span>
+
+                    <input type="hidden" name="galleryImages[]" id="galleryImages${autoId}" value="${id}">
+                </div>
+            </div>
+        `);
+
+        toastr.success('The image has been added.');
 
     }
 
@@ -329,6 +350,7 @@ const removeMedia = (el) => {
         $(inputName+"Display").css('background-image', 'url(' + defMedia + ')');
     } else {
         
+        $(inputName).remove();
         
     }
 

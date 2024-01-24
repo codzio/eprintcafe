@@ -14,6 +14,10 @@ use App\Http\Controllers\admin\PaperSize;
 use App\Http\Controllers\admin\PaperType;
 use App\Http\Controllers\admin\Binding;
 use App\Http\Controllers\admin\Lamination;
+use App\Http\Controllers\admin\Cover;
+use App\Http\Controllers\admin\Gsm;
+use App\Http\Controllers\admin\Product;
+use App\Http\Controllers\admin\Pricing;
 
 /*
 |--------------------------------------------------------------------------
@@ -158,6 +162,75 @@ Route::prefix(config('admin.path'))->middleware('web')->group(function () {
             Route::post('/doUpdate', [Lamination::class, 'doUpdate'])->name('adminDoUpdateLamination');
             Route::post('/doDelete', [Lamination::class, 'doDelete'])->name('adminDeleteLamination');
             Route::post('/doBulkDelete', [Lamination::class, 'doBulkDelete'])->name('adminBulkDeleteLamination');
+        });
+
+        //Cover
+        Route::prefix('cover')->group(function() {
+            Route::get('/', [Cover::class, 'index'])->name('adminCover');
+            Route::get('/get', [Cover::class, 'get'])->name('getAdminCover');
+
+            Route::get('/add', [Cover::class, 'add'])->name('adminAddCover');
+            Route::get('/edit/{id}', [Cover::class, 'edit'])->name('adminEditCover');
+
+            Route::post('/doAdd', [Cover::class, 'doAdd'])->name('adminDoAddCover');
+            Route::post('/doUpdate', [Cover::class, 'doUpdate'])->name('adminDoUpdateCover');
+            Route::post('/doDelete', [Cover::class, 'doDelete'])->name('adminDeleteCover');
+            Route::post('/doBulkDelete', [Cover::class, 'doBulkDelete'])->name('adminBulkDeleteCover');
+        });
+
+        //Gsm
+        Route::prefix('gsm')->group(function() {
+            Route::get('/', [Gsm::class, 'index'])->name('adminGsm');
+            Route::get('/get', [Gsm::class, 'get'])->name('getAdminGsm');
+
+            Route::get('/add', [Gsm::class, 'add'])->name('adminAddGsm');
+            Route::get('/edit/{id}', [Gsm::class, 'edit'])->name('adminEditGsm');
+
+            Route::post('/doAdd', [Gsm::class, 'doAdd'])->name('adminDoAddGsm');
+            Route::post('/doUpdate', [Gsm::class, 'doUpdate'])->name('adminDoUpdateGsm');
+            Route::post('/doDelete', [Gsm::class, 'doDelete'])->name('adminDeleteGsm');
+            Route::post('/doBulkDelete', [Gsm::class, 'doBulkDelete'])->name('adminBulkDeleteGsm');
+        });
+
+        //Product
+        Route::prefix('product')->group(function() {
+            Route::get('/', [Product::class, 'index'])->name('adminProduct');
+            Route::get('/get', [Product::class, 'get'])->name('getAdminProduct');
+
+            Route::get('/add', [Product::class, 'add'])->name('adminAddProduct');
+            Route::get('/edit/{id}', [Product::class, 'edit'])->name('adminEditProduct');
+
+            Route::post('/doAdd', [Product::class, 'doAdd'])->name('adminDoAddProduct');
+            Route::post('/doUpdate', [Product::class, 'doUpdate'])->name('adminDoUpdateProduct');
+            Route::post('/doDelete', [Product::class, 'doDelete'])->name('adminDeleteProduct');
+            Route::post('/doBulkDelete', [Product::class, 'doBulkDelete'])->name('adminBulkDeleteProduct');
+        });
+
+        //Pricing
+        Route::prefix('pricing')->group(function() {
+            
+            // Route::get('/edit/{productId}/{pricingId}', [Pricing::class, 'edit'])->name('adminEditPricing');
+            // Route::get('/get', [Pricing::class, 'get'])->name('getAdminPricing');
+            // Route::get('/add/{id}', [Pricing::class, 'add'])->name('adminAddPricing');
+            // Route::get('/{id}', [Pricing::class, 'index'])->name('adminPricing');
+
+            Route::get('/edit/{productId}/{pricingId}', [Pricing::class, 'edit'])->name('adminEditPricing');
+            Route::get('/add/{id}', [Pricing::class, 'add'])->name('adminAddPricing');
+            Route::get('/get', [Pricing::class, 'get'])->name('getAdminPricingData'); // Move this route up
+            Route::get('/{id}', [Pricing::class, 'index'])->name('adminPricing');
+
+            
+            
+
+            Route::post('/doAdd', [Pricing::class, 'doAdd'])->name('adminDoAddPricing');
+            Route::post('/doUpdate', [Pricing::class, 'doUpdate'])->name('adminDoUpdatePricing');
+            Route::post('/doDelete', [Pricing::class, 'doDelete'])->name('adminDeletePricing');
+            Route::post('/doBulkDelete', [Pricing::class, 'doBulkDelete'])->name('adminBulkDeletePricing');
+            Route::post('/getPaperGsm', [Pricing::class, 'getPaperGsm'])->name('getAdminPaperGsm');
+            Route::post('/getPaperType', [Pricing::class, 'getPaperType'])->name('getAdminPaperType');
+            Route::post('/getPricing', [Pricing::class, 'getPricing'])->name('getAdminPricing');
+
+            
         });
 
         //Site Settings

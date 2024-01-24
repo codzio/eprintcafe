@@ -74,10 +74,12 @@ class PaperType extends Controller {
 		    $searchValue = $search_arr['value']; // Search value
 
 		     // Total records
-		    $totalRecords = PaperTypeModel::join('paper_size', 'paper_type.paper_size_id', '=', 'paper_size.id')->select('count(paper_type.*) as allcount');
+		    // $totalRecords = PaperTypeModel::join('paper_size', 'paper_type.paper_size_id', '=', 'paper_size.id')->select('count(paper_type.*) as allcount');
+		    $totalRecords = PaperTypeModel::select('count(paper_type.*) as allcount');
 		    $totalRecords = $totalRecords->count();
 
-		    $totalRecordswithFilter = PaperTypeModel::join('paper_size', 'paper_type.paper_size_id', '=', 'paper_size.id')->select('count(paper_type.*) as allcount');
+		    // $totalRecordswithFilter = PaperTypeModel::join('paper_size', 'paper_type.paper_size_id', '=', 'paper_size.id')->select('count(paper_type.*) as allcount');
+		    $totalRecordswithFilter = PaperTypeModel::select('count(paper_type.*) as allcount');
 
 		    // if (!empty($searchValue)) {
 		    // 	$totalRecordswithFilter->where('admins.name', 'like', '%' .$searchValue . '%');
@@ -86,9 +88,12 @@ class PaperType extends Controller {
 		    if (!empty($searchValue)) {
 			    $totalRecordswithFilter->where(function ($query) use ($searchValue) {
 
-			        $query->where('paper_size.size', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('paper_size.slug', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('paper_type.paper_type', 'like', '%' . $searchValue . '%')
+			        // $query->where('paper_size.size', 'like', '%' . $searchValue . '%')
+			        // 	  ->orWhere('paper_size.slug', 'like', '%' . $searchValue . '%')
+			        // 	  ->orWhere('paper_type.paper_type', 'like', '%' . $searchValue . '%')
+			        // 	  ->orWhere('paper_type.paper_type_slug', 'like', '%' . $searchValue . '%');
+
+			        $query->where('paper_type.paper_type', 'like', '%' . $searchValue . '%')
 			        	  ->orWhere('paper_type.paper_type_slug', 'like', '%' . $searchValue . '%');			        	  
 
 			        // if (strtolower($searchValue) == 'active') {
@@ -103,7 +108,9 @@ class PaperType extends Controller {
 		    $totalRecordswithFilter = $totalRecordswithFilter->count();
 
 		     // Fetch records
-		    $records = PaperTypeModel::join('paper_size', 'paper_type.paper_size_id', '=', 'paper_size.id')->select('paper_size.size', 'paper_type.*')->skip($start)->take($rowperpage);
+		    // $records = PaperTypeModel::join('paper_size', 'paper_type.paper_size_id', '=', 'paper_size.id')->select('paper_size.size', 'paper_type.*')->skip($start)->take($rowperpage);
+
+		    $records = PaperTypeModel::select('paper_type.*')->skip($start)->take($rowperpage);
 
 		    // if (!empty($searchValue)) {
 		    // 	$records->where('admins.name', 'like', '%' .$searchValue . '%');
@@ -112,9 +119,7 @@ class PaperType extends Controller {
 		    if (!empty($searchValue)) {
 			    $records->where(function ($query) use ($searchValue) {
 			        
-			        $query->where('paper_size.size', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('paper_size.slug', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('paper_type.paper_type', 'like', '%' . $searchValue . '%')
+			        $query->where('paper_type.paper_type', 'like', '%' . $searchValue . '%')
 			        	  ->orWhere('paper_type.paper_type_slug', 'like', '%' . $searchValue . '%');
 
 			        // if (strtolower($searchValue) == 'active') {
@@ -178,7 +183,7 @@ class PaperType extends Controller {
 
 			        $data_arr[] = array(
 			        	"checkbox" => $checkbox,
-			          	"size" => $record->size,
+			          	// "size" => $record->size,
 			          	"paper_type" => $record->paper_type,
 			          	"paper_type_slug" => $record->paper_type_slug,
 			          	"action" => $action
@@ -268,19 +273,21 @@ class PaperType extends Controller {
 			}
 
 	        $validator = Validator::make($request->post(), [
-			    'paperSize' => 'required|exists:paper_size,id',
-			    'paperType' => [
-			        'required',
-			        Rule::unique('paper_type', 'paper_type')->where(function ($query) use ($request) {
-			            return $query->where('paper_size_id', $request->input('paperSize'));
-			        }),
-			    ],
-			    'slug' => [
-			        'required',
-			        Rule::unique('paper_type', 'paper_type_slug')->where(function ($query) use ($request) {
-			            return $query->where('paper_size_id', $request->input('paperSize'));
-			        }),
-			    ],
+			    // 'paperSize' => 'required|exists:paper_size,id',
+			    // 'paperType' => [
+			    //     'required',
+			    //     Rule::unique('paper_type', 'paper_type')->where(function ($query) use ($request) {
+			    //         return $query->where('paper_size_id', $request->input('paperSize'));
+			    //     }),
+			    // ],
+			    // 'slug' => [
+			    //     'required',
+			    //     Rule::unique('paper_type', 'paper_type_slug')->where(function ($query) use ($request) {
+			    //         return $query->where('paper_size_id', $request->input('paperSize'));
+			    //     }),
+			    // ],
+			    'paperType' => 'required|unique:paper_type,paper_type',
+	            'slug' => 'required|unique:paper_type,paper_type_slug',
 			]);
 
 	        if ($validator->fails()) {
@@ -298,7 +305,7 @@ class PaperType extends Controller {
 
 	        	$obj = [
 	        		'admin_id' => adminId(),
-	        		'paper_size_id' => $request->post('paperSize'),
+	        		// 'paper_size_id' => $request->post('paperSize'),
 	        		'paper_type' => $request->post('paperType'),
 	        		'paper_type_slug' => Str::slug($request->post('slug')),
 	        	];
@@ -350,19 +357,21 @@ class PaperType extends Controller {
 
 	        $validator = Validator::make($request->post(), [
 	        	'id' => 'required|numeric',
-			    'paperSize' => 'required|exists:paper_size,id',
-			    'paperType' => [
-			        'required',
-			        Rule::unique('paper_type', 'paper_type')->where(function ($query) use ($request) {
-			            return $query->where('paper_size_id', $request->input('paperSize'))->where('id', '!=', $request->input('id'));
-			        }),
-			    ],
-			    'slug' => [
-			        'required',
-			        Rule::unique('paper_type', 'paper_type_slug')->where(function ($query) use ($request) {
-			            return $query->where('paper_size_id', $request->input('paperSize'))->where('id', '!=', $request->input('id'));
-			        }),
-			    ],
+			    // 'paperSize' => 'required|exists:paper_size,id',
+			    // 'paperType' => [
+			    //     'required',
+			    //     Rule::unique('paper_type', 'paper_type')->where(function ($query) use ($request) {
+			    //         return $query->where('paper_size_id', $request->input('paperSize'))->where('id', '!=', $request->input('id'));
+			    //     }),
+			    // ],
+			    // 'slug' => [
+			    //     'required',
+			    //     Rule::unique('paper_type', 'paper_type_slug')->where(function ($query) use ($request) {
+			    //         return $query->where('paper_size_id', $request->input('paperSize'))->where('id', '!=', $request->input('id'));
+			    //     }),
+			    // ],
+			    'paperType' => 'required|unique:paper_type,paper_type,'.$id,
+	            'slug' => 'required|unique:paper_type,paper_type_slug,'.$id,
 			]);
 
 	        if ($validator->fails()) {
@@ -391,7 +400,7 @@ class PaperType extends Controller {
 					return json_encode($this->status);
 	        	}
 
-	        	$getPaperType->paper_size_id = $request->post('paperSize');
+	        	// $getPaperType->paper_size_id = $request->post('paperSize');
 	        	$getPaperType->paper_type = $request->post('paperType');
 	        	$getPaperType->paper_type_slug = Str::slug($request->post('slug'));
 	        	$isUpdated = $getPaperType->save();

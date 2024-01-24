@@ -10,7 +10,7 @@
             <div class="card-header border-0 cursor-pointer">
                 
                 <div class="card-title m-0">
-                    <h3 class="fw-bold m-0">Add Paper Size</h3>
+                    <h3 class="fw-bold m-0">Add Paper Type</h3>
                 </div>
 
                 <div class="card-title">
@@ -23,7 +23,7 @@
                 <form id="kt_form" class="form" action="{{ route('adminDoAddPaperType') }}">
                     <div class="card-body border-top p-9">
 
-                        <div class="row mb-6">                    
+                        <!-- <div class="row mb-6">                    
                             <label class="col-lg-3 col-form-label fw-semibold fs-6 required">Paper Size</label>
                             <div class="col-lg-9">                        
                                 <div class="row">
@@ -40,7 +40,7 @@
                                     </div>                            
                                 </div>
                             </div>                    
-                        </div>
+                        </div> -->
 
                         <div class="row mb-6">                    
                             <label class="col-lg-3 col-form-label fw-semibold fs-6 required">Paper Type</label>

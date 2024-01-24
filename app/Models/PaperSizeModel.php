@@ -8,7 +8,7 @@ class PaperSizeModel extends Model
 {
     
     protected $table = 'paper_size';
-    protected $fillable = ['admin_id', 'size', 'slug'];
+    protected $fillable = ['admin_id', 'size', 'slug', 'measurement'];
     protected $guarded = ['id'];
 
 }

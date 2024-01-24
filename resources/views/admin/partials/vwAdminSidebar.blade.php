@@ -54,12 +54,12 @@ data-kt-drawer="true" data-kt-drawer-name="app-sidebar" data-kt-drawer-activate=
                         <span  class="menu-icon" >
                             <i class="ki-outline ki-home-2 fs-2"></i>
                         </span>
-                        <span  class="menu-title" >User Roles & Permissions</span>
-                        <span  class="menu-arrow" ></span>
+                        <span  class="menu-title">User Roles & Permissions</span>
+                        <span  class="menu-arrow"></span>
                     </span>
 
 
-                    <div  class="menu-sub menu-sub-accordion" >
+                    <div class="menu-sub menu-sub-accordion" >
                         <div  class="menu-item" >
                             
                             @can('read', 'users')
@@ -85,15 +85,15 @@ data-kt-drawer="true" data-kt-drawer-name="app-sidebar" data-kt-drawer-activate=
                 </div>
                 @endif
 
-                @if(can('read', 'products')))
+                @can('read', 'products')
                 <div  data-kt-menu-trigger="click"  class="menu-item here show menu-accordion" >
                     
                     <span class="menu-link" >
                         <span  class="menu-icon" >
                             <i class="ki-outline ki-home-2 fs-2"></i>
                         </span>
-                        <span  class="menu-title" >Products</span>
-                        <span  class="menu-arrow" ></span>
+                        <span  class="menu-title">Products</span>
+                        <span  class="menu-arrow"></span>
                     </span>
 
 
@@ -145,10 +145,37 @@ data-kt-drawer="true" data-kt-drawer-name="app-sidebar" data-kt-drawer-activate=
                             </a>
                             @endcan
 
+                            @can('read', 'cover')
+                            <a class="menu-link"  href="{{ route('adminCover') }}" >
+                                <span  class="menu-bullet" >
+                                    <span class="bullet bullet-dot"></span>
+                                </span>
+                                <span  class="menu-title">Cover</span>
+                            </a>
+                            @endcan
+
+                            @can('read', 'gsm')
+                            <a class="menu-link"  href="{{ route('adminGsm') }}" >
+                                <span  class="menu-bullet" >
+                                    <span class="bullet bullet-dot"></span>
+                                </span>
+                                <span  class="menu-title">Paper GSM</span>
+                            </a>
+                            @endcan
+
+                            @can('read', 'product')
+                            <a class="menu-link"  href="{{ route('adminProduct') }}" >
+                                <span  class="menu-bullet" >
+                                    <span class="bullet bullet-dot"></span>
+                                </span>
+                                <span  class="menu-title">Product</span>
+                            </a>
+                            @endcan
+
                         </div>
                     </div>
                 </div>
-                @endif
+                @endcan
 
                 @can('read', 'site_settings')
                 <div class="menu-item here">            

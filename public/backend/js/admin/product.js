@@ -30,9 +30,10 @@ var table = $('#kt_file_manager_list').DataTable({
     // "stateSave": true,
     "columns": [
         { "orderable": false, "searchable": false, "data": "checkbox" },
-        { "data": "size" },
+        { "data": "category" },
+        { "data": "product" },
         { "data": "slug" },
-        { "data": "measurement" },
+        { "data": "status" },
         { "orderable": false, "searchable": false, "data": "action" }
     ]
 });
@@ -188,7 +189,10 @@ $("#kt_form").submit(function(event) {
     event.preventDefault();
 
     url = $(this).attr('action');
+    var description = tinymce.get('description').getContent();  
+
     formData = $(this).serialize();
+    formData += "&description="+description;
 
     $.ajax({
         url: url,
@@ -229,8 +233,12 @@ $("#kt_form").submit(function(event) {
 $("#kt_form_update").submit(function(event) {
     event.preventDefault();
 
-    url = $(this).attr('action');
+    url = $(this).attr('action');    
+
+    var description = tinymce.get('description').getContent();  
+
     formData = $(this).serialize();
+    formData += "&description="+description;
 
     $.ajax({
         url: url,

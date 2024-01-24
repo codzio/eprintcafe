@@ -23,7 +23,7 @@
                 <form id="kt_form_update" class="form" action="{{ route('adminDoUpdatePaperType') }}">
                     <div class="card-body border-top p-9">
 
-                        <div class="row mb-6">                    
+                        <!-- <div class="row mb-6">                    
                             <label class="col-lg-3 col-form-label fw-semibold fs-6 required">Paper Size</label>
                             <div class="col-lg-9">                        
                                 <div class="row">
@@ -40,7 +40,7 @@
                                     </div>                            
                                 </div>
                             </div>                    
-                        </div>
+                        </div> -->
 
                         <div class="row mb-6">                    
                             <label class="col-lg-3 col-form-label fw-semibold fs-6 required">Paper Type</label>

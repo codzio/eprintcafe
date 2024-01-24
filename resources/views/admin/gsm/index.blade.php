@@ -24,7 +24,7 @@
                             <div class="card-title">
                                 <div class="d-flex align-items-center position-relative my-1">
                                     <i class="ki-outline ki-magnifier fs-1 position-absolute ms-6"></i>    
-                                    <input type="text" onkeyup="search(this.value)" class="form-control form-control-solid w-250px ps-15" placeholder="Search Paper Size" />
+                                    <input type="text" onkeyup="search(this.value)" class="form-control form-control-solid w-250px ps-15" placeholder="Search Paper GSM" />
                                 </div>
                             </div>
                             <div class="card-toolbar">
@@ -32,12 +32,12 @@
                                     <div class="fw-bold me-5">
                                         <span class="me-2" data-kt-filemanager-table-select="selected_count"></span> Selected
                                     </div>
-                                    <button onclick="startBulkDelete(this)" data-url="{{ route('adminBulkDeletePaperSize') }}" type="button" class="btn btn-danger" data-kt-filemanager-table-select="delete_selected">
+                                    <button onclick="startBulkDelete(this)" data-url="{{ route('adminBulkDeleteGsm') }}" type="button" class="btn btn-danger" data-kt-filemanager-table-select="delete_selected">
                                         Delete Selected
                                     </button>
                                 </div>
 
-                                <a href="{{ route('adminAddPaperSize') }}" class="btn btn-primary">Add Paper Size</a>
+                                <a href="{{ route('adminAddGsm') }}" class="btn btn-primary">Add Paper GSM</a>
                             </div>
                         </div>
                         <!--end::Card header-->
@@ -53,9 +53,13 @@
                                                 <input onclick="bulkSelectData(this)" class="form-check-input" type="checkbox" data-kt-check="false" value="1" />
                                             </div>
                                         </th>
-                                        <th class="min-w-100px">Size</th>
-                                        <th class="min-w-100px">Slug</th>
-                                        <th class="min-w-100px">Measurement</th>
+                                        <th class="min-w-100px">Paper Size</th>
+                                        <th>Measurement</th>
+                                        <th class="min-w-100px">Paper GSM</th>
+                                        <th class="min-w-100px">Weight</th>
+                                        <th class="min-w-100px">Rate</th>
+                                        <th class="min-w-100px">Paper Type</th>
+                                        <th class="min-w-100px">Paper Rate</th>
                                         <th class="w-125px">Action</th>
                                     </tr>
                                 </thead>
@@ -77,10 +81,10 @@
     </div>
 
     <script type="text/javascript">
-        dataUrl = '{{ route("getAdminPaperSize") }}';        
+        dataUrl = '{{ route("getAdminGsm") }}';        
     </script>
 
     <script src="{{ asset('public/backend') }}/plugins/custom/datatables/datatables.bundle.js"></script>
-    <script src="{{ asset('public/backend/js/admin/paper-size.js') }}"></script>
+    <script src="{{ asset('public/backend/js/admin/gsm.js') }}"></script>
 
 @endsection
