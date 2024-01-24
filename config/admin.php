@@ -1,5 +1,0 @@
-<?php
-
-return [
-    'path' => env('ADMIN_PATH', 'manage'),
-];
