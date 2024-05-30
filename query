@@ -1,0 +1,17 @@
+ALTER TABLE `product` ADD `display_on_home` TINYINT(1) NOT NULL DEFAULT '0' AFTER `gallery_images`;
+
+28/02/2024
+
+ALTER TABLE `product` ADD `registered_hsn_code` VARCHAR(255) NULL AFTER `is_active`, ADD `unregistered_hsn_code` VARCHAR(255) NULL AFTER `registered_hsn_code`;
+
+ALTER TABLE `orders` ADD `invoice_number` VARCHAR(255) NULL AFTER `product_id`;
+
+13/02/2024
+
+ALTER TABLE `orders` ADD `shipping_label_number` VARCHAR(255) NULL AFTER `invoice_number`;
+barcode table
+
+19/02/2024
+
+1. ALTER TABLE `orders` ADD `status` ENUM('paid','unpaid') NOT NULL DEFAULT 'paid' AFTER `document_link`;
+2. State table
