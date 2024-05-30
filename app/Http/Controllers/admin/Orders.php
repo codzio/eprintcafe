@@ -558,7 +558,7 @@ class Orders extends Controller {
 
 		$stateList = DB::table('states')->orderBy('state')->get();
 		$customerList = CustomerModel::latest()->get();
-		$productList = ProductModel::get();
+		$productList = ProductModel::where('is_active', 1)->get();
 
 		// $saveProductList = CustomCartModel::join('product', 'custom_cart.product_id', '=', 'product.id')
 		// ->where('user_id', 6)
@@ -599,7 +599,7 @@ class Orders extends Controller {
 					
 					$stateList = DB::table('states')->orderBy('state')->get();
 					$customerList = CustomerModel::latest()->get();
-					$productList = ProductModel::get();
+					$productList = ProductModel::where('is_active', 1)->get();
 					$customerAddress = json_decode($getOrder->customer_address);
 
 					$productId = $orderItem->product_id;
