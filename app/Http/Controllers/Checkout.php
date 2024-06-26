@@ -898,7 +898,8 @@ class Checkout extends Controller {
 						//$filePath = $file->storeAs($craftPath, $finalName);
 						//$folderId = '1AgOwXplcpb1Y1xW-MYQ6FAgDhP_mC3Sw';
 						//$folderId = '1KYl_BlpStYJRqTg7-yMELsvEx8dqWFBu';
-						$folderId = '1pZDVfPNcFMP_2ciyW-35bYzYCxHZHess';
+						// $folderId = '1pZDVfPNcFMP_2ciyW-35bYzYCxHZHess';
+						$folderId = '1k6mzHDaIPO9340rfYVH0ppdEcr1eSRmI';
 						//$fileId = $googleDriveService->uploadFile(storage_path("app/{$filePath}"), $folderId);
 
 						$fileContent = $file->get();
@@ -1006,7 +1007,8 @@ class Checkout extends Controller {
 	        } else {
 
 	        	$fileId = $request->post('id');
-	        	$folderId = '1pZDVfPNcFMP_2ciyW-35bYzYCxHZHess';
+	        	// $folderId = '1pZDVfPNcFMP_2ciyW-35bYzYCxHZHess';
+	        	$folderId = '1k6mzHDaIPO9340rfYVH0ppdEcr1eSRmI';
 
 	        	$storedDocs = Session::get('documents');
 

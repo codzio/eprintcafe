@@ -452,8 +452,8 @@
                                 <div class="row">
                                     <div class="col-lg-12 fv-row">
                                         <select id="status" class="form-select mb-2" name="status" data-control="select2" data-hide-search="false" data-placeholder="Select Status">
-                                            <option {{ $order->status == 'paid'? 'selected':'' }} value="paid">PAID</option>
                                             <option {{ $order->status == 'unpaid'? 'selected':'' }} value="unpaid">UNPAID</option>
+                                            <option {{ $order->status == 'paid'? 'selected':'' }} value="paid">PAID</option>
                                         </select>
                                         <span id="statusErr" class="text-danger"></span>
                                     </div>                            
