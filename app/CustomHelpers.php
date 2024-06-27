@@ -993,12 +993,133 @@ function productPriceMulti() {
 
 }
 
-function productSinglePrice($productId) {
+function productSinglePriceForAmount($productId, $paperSizeId, $paperGsmId, $paperTypeId, $printSide, $color, $bindingId, $laminationId, $coverId, $qty, $noOfCopies) {
 
-	$tempId = Request::cookie('tempUserId');
-	$userId = customerId();
+	$data = [
+		'per_sheet_weight' => 0,
+		'paper_type_price' => 0,
+		'printSideAndColorPrice' => 0,
+		'binding' => 0,
+		'split' => 0,
+		'lamination' => 0,
+		'cover' => 0,
+		'price' => 0,
+		'shipping' => 0,
+		'discount' => 0,
+		'total' => 0
+	];
+
+	$getPaperGsm = GsmModel::where(['paper_size' => $paperSizeId, 'id' => $paperGsmId, 'paper_type' => $paperTypeId])->first();
+
+	if (!empty($getPaperGsm)) {
+		$data['per_sheet_weight'] = $getPaperGsm->per_sheet_weight;
+		$data['paper_type_price'] = $getPaperGsm->paper_type_price;
+	}
+
+	$printSideAndColorPrice = PricingModel::where(['product_id' => $productId, 'paper_size_id' => $paperSizeId, 'paper_gsm_id' => $paperGsmId, 'paper_type_id' => $paperTypeId, 'side' => $printSide, 'color' => $color])->value('other_price');
+
+	if (!empty($printSideAndColorPrice)) {
+		$data['printSideAndColorPrice'] = $printSideAndColorPrice;
+	}
+
+	if (!empty($bindingId)) {
+		
+		//$bindingData = BindingModel::where('id', $bindingId)->value('price');
+		$bindingData = BindingModel::where('id', $bindingId)->first();
+
+		if (!empty($bindingData)) {
+
+			$totalSplit = 1;
+			$multiple = ($printSide == 'Double Side')? 2:1;
+			$bindingSplit = $bindingData->split;
+            $bindingSplit = $bindingSplit*$multiple;
+
+            if (!empty($bindingSplit) && $qty > $bindingSplit) {
+              $totalSplit = ceil($qty/$bindingSplit); 
+            } else {
+            	$totalSplit = 0;
+            }
+
+			$data['binding'] = $bindingData->price;
+			$data['split'] = $totalSplit;
+		}
+
+	}
+
+	//check the binding split & update the price
+	if ($data['split'] > 1) {
+		$data['binding'] = $data['binding']*$data['split'];
+	}
+
+	if (!empty($laminationId)) {
+		
+		$laminationData = LaminationModel::where('id', $laminationId)->value('price');
+
+		if (!empty($laminationData)) {
+			$data['lamination'] = $laminationData;
+		}
+
+	}
+
+	// $data['price'] = $data['per_sheet_weight']+$data['paper_type_price']+$data['printSideAndColorPrice']+$data['binding']+$data['lamination']+$data['cover'];
+
+	// $data['price'] = $data['paper_type_price']+$data['printSideAndColorPrice']+$data['binding']+$data['lamination']+$data['cover'];
+
+	$data['price'] = $data['paper_type_price']+$data['printSideAndColorPrice'];
+
+	$getCouponData = Session::get('couponSess');
+
+	$discount = 0;
+
+	if (!empty($getCouponData)) {
+		$discount = $getCouponData['discount'];
+	}
+
+	//Shipping
+	$shipping = 0;
+	$getShippingData = Session::get('shippingSess');
+
+	if (!empty($getShippingData)) {
+		$shipping = $getShippingData['shipping'];
+	}
+
+	//no of copies
+
+	$getPriceCal = (($data['price']*$qty))+$data['binding']+$data['lamination']+$data['cover'];
+	$getPriceCal = $getPriceCal*$noOfCopies;
+
+	// if (!empty($noOfCopies)) {
+			
+	// 	$noOfCopies = $noOfCopies+1;
+	// 	$getPriceCal = (($data['price']*$cartData->qty)*$noOfCopies)+$data['binding']+$data['lamination']+$data['cover'];
+
+	// } else {
+	// 	$getPriceCal = ($data['price']*$cartData->qty)+$data['binding']+$data['lamination']+$data['cover'];
+	// }
+
+	$data['discount'] = $discount;
+	$data['shipping'] = $shipping;
+	// $data['subTotal'] = $getPriceCal;
+	// $data['total'] = ($getPriceCal-$discount)+$shipping;
+
+	$data['subTotal'] = round($getPriceCal, 2);
+	$data['total'] = round(($getPriceCal-$discount)+$shipping, 2);
+
+	return (object) $data;
+
+}
+
+function productSinglePrice($productId, $getUserId=null) {
 
 	$cond = ['product.is_active' => 1, 'cart.product_id' => $productId];
+
+	if (!empty($getUserId)) {
+		$userId = $getUserId;
+	} else {
+		$tempId = Request::cookie('tempUserId');
+		$userId = customerId();
+	}
+
 	if (!empty($userId)) {
 		$cond['cart.user_id'] = $userId;
 	} else {

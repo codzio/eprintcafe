@@ -54,7 +54,12 @@
                        </table>
 
                        @if(!empty($cartItems) && $cartItems->count())
-                       <h3>Product Items</h3>
+                       
+                       <div style="display: flex; align-items: center;margin: 1rem;">
+                            <h3>Product Items</h3>
+                            <button data-user="{{ $customer->id }}" data-action="{{ route('adminMoveToOrders') }}" onclick="moveToOrders(this)" type="button" style="margin-left: auto;" class="btn btn-primary btn-sm">Move To Orders</button>
+                       </div>
+
                        <table class="table table-bordered">
                            <thead>
                                <th>#</th>
@@ -110,6 +115,6 @@
     <script type="text/javascript">
         dataUrl = '{{ route("getAdminOrders") }}';
     </script>
-    <script src="{{ asset('public/backend/js/admin/order.js?v=1') }}"></script>
+    <script src="{{ asset('public/backend/js/admin/order.js?v=2') }}"></script>
 
 @endsection

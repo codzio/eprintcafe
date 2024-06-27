@@ -205,6 +205,7 @@ class Cart extends Controller {
 	        					'cover_id' => $cover,
 	        					'qty' => $noOfPages,
 	        					'no_of_copies' => $noOfCopies,
+	        					'amount' => productSinglePriceForAmount($productId, $paperSize, $paperGsm, $paperType, $paperSides, $color, $binding, $lamination, $cover, $noOfPages, $noOfCopies)->total,
 	        					// 'document_link' => $documentLink,
 	        				];
 
@@ -401,7 +402,12 @@ class Cart extends Controller {
 
 				foreach ($qty as $cartId => $value) {
 					$cond['cart.id'] = $cartId;
-					CartModel::where($cond)->update(['qty' => $value, 'no_of_copies' => $noOfCopies[$cartId]]);	
+
+					$cartData = CartModel::where($cond)->first();
+
+					$amount = productSinglePrice($cartData->product_id, $cartData->user_id)->total;
+
+					CartModel::where($cond)->update(['qty' => $value, 'no_of_copies' => $noOfCopies[$cartId], 'amount' => $amount]);	
 				}
 
 	        	//remove coupon && shipping

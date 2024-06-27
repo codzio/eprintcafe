@@ -459,6 +459,41 @@ $("#changeOrderStatusBtn").click(function(event) {
 
 });
 
+const moveToOrders = (el) => {
+    const userId = $(el).data('user');
+    const url = $(el).data('action');
+
+    $.ajax({
+        url: url,
+        type: 'POST',
+        dataType: 'JSON',
+        data: {userId: userId},
+        beforeSend: function() {
+            $(el).html('Please Wait...<i class="fa fa-spinner fa-spin"></i>');
+        },
+        success: function(res) {
+            if (res.error == true) {
+                if (res.eType == 'field') {
+                    $.each(res.errors, function(index, val) {
+                        $("#"+index+"Err").html(val);
+                    });
+                } else {
+                    toastr.error(res.msg);
+                }
+            } else {
+                toastr.success(res.msg);
+                setTimeout(function() {
+                    location.reload();
+                }, 3000);
+            }
+
+            $(el).html('Move To Orders')
+
+        }
+    });
+
+}
+
 function generateSlug(el, id) {
     var inputValue = $(el).val()
     var slug = inputValue

@@ -603,6 +603,8 @@ class Home extends Controller {
 			$paidAmount = $paymentSess['amount'];
 			$productName = $paymentSess['productinfo'];
 
+	        Log::channel('payment-log')->info('redirecting-to-payumoney-'.date('Y-m-d h:i'), ['data' => json_encode($paymentSess)]);
+
 			// $posted = array(
 	        //     'key' => $MERCHANT_KEY,
 	        //     'txnid' => $txnid,
@@ -641,6 +643,8 @@ class Home extends Controller {
 	}
 
 	public function paymentResponse(Request $request) {
+
+		Log::channel('payment-log')->info('payumoney-response-'.date('Y-m-d h:i'), ['data' => json_encode($request->all())]);
 
 		if ($request->post('status') == 'success') {
 			
@@ -821,7 +825,7 @@ class Home extends Controller {
 
 	public function paynowResponse(Request $request) {
 
-		Log::channel('payment-log')->info('payment-success-'.date('Y-m-d h:i'), ['data' => json_encode($_REQUEST)]);
+		Log::channel('payment-log')->info('payment-success-'.date('Y-m-d h:i'), ['data' => json_encode($request->all())]);
 
 		if ($request->post('status') == 'success') {
 
@@ -1197,7 +1201,7 @@ class Home extends Controller {
 
 	public function paymentFail(Request $request) {
 
-		Log::channel('payment-log')->info('payment-failed-'.date('Y-m-d h:i'), ['data' => json_encode($_REQUEST)]);
+		Log::channel('payment-log')->info('payment-failed-'.date('Y-m-d h:i'), ['data' => json_encode($request->all())]);
 
 		Session::forget('paymentSess');
 		Session::forget('paymentPayNowSess');

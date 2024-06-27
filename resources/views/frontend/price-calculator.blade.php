@@ -430,6 +430,9 @@
   <div class="container">
     <div class="row align-items-center">
       <div class="col-lg-12">
+
+        <h5 class="text-center" style="margin-bottom:3rem">The calculated prices are exclusive of discounts.</h5>
+
         <div class="tset"><span> 
           <span class="tsethead">PAGES :</span> 
           <span id="pagesRes" class="tsetvalue">-</span></span>

@@ -115,6 +115,8 @@
 
   {!! setting('body_scripts') !!}
 
+  <marquee style="height: unset; margin-top: 10px; font-size: 15px; font-weight:bold" width="100%%" direction="left" height="100px">For order status and enquiries, call <a style="color:var(--secondary-color-3)" href="tel:8448193391">8448193391</a>. For corporate and bulk enquiries, call <a style="color:var(--secondary-color-3)" href="tel:8448193390">8448193390</a>.</marquee>
+
 <!-- LOADER -->
 <div id="loader">
   <div class="position-center-center">

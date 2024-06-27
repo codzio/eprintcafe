@@ -21,6 +21,41 @@
             <div class="card card-flush">
 
                 <div class="tab-content">
+
+                    <form action="{{ route('adminAbandonedCart') }}" id="filter" method="get" style="padding-top: 2.25rem; padding-left: 2.25rem;">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label class="col-lg-12 col-form-label fw-semibold fs-6">Date From</label>
+                                    <input type="date" name="dateFrom" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label class="col-lg-12 col-form-label fw-semibold fs-6">Date To</label>
+                                    <input type="date" name="dateTo" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label class="col-lg-12 col-form-label fw-semibold fs-6">Less Than Amount</label>
+                                    <input min="1" type="number" name="lessThan" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label class="col-lg-12 col-form-label fw-semibold fs-6">Greater Than Amount</label>
+                                    <input min="1" type="number" name="greaterThan" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label class="col-lg-12 col-form-label fw-semibold fs-6">Action</label>
+                                    <button name="export" value="yes" class="btn btn-primary">Export</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
                                         
                     <!--begin::Tap pane-->
                     <div class="tab-pane fade show active" id="kt_list_widget_10_tab_1">

@@ -315,6 +315,7 @@ Route::prefix(config('admin.path'))->middleware('web')->group(function () {
             Route::get('/', [AbandonedCart::class, 'index'])->name('adminAbandonedCart');
             Route::get('/get', [AbandonedCart::class, 'get'])->name('getAdminAbandonedCart');
             Route::get('/view/{id}', [AbandonedCart::class, 'view'])->name('adminViewAbandonedCart');
+            Route::post('/moveToOrders', [AbandonedCart::class, 'moveToOrders'])->name('adminMoveToOrders');
         });
 
         //Customers
