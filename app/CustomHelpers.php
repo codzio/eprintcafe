@@ -89,7 +89,11 @@ function adminInfoById($id, $col='') {
 
 function adminId() {
 	$adminSess = Session::get('adminSess');
-	return $adminSess['adminId'];
+	if (!empty($adminSess)) {
+		return $adminSess['adminId'];
+	} else {
+		return false;
+	}
 }
 
 function userInfo($col='') {

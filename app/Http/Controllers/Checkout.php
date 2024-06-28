@@ -488,6 +488,12 @@ class Checkout extends Controller {
 	        		//$paidAmount = $priceData->total*100;
 	        		//$paidAmount = 1;
 	        		$paidAmount = $priceData->total;
+
+	        		//Add Packaging Charges
+	        		if (setting('packaging_charges')) {
+	        			$paidAmount += ($paidAmount*setting('packaging_charges'))/100;
+	        		}
+
 	        		$transactionId = uniqid();
 
 	        		//phonepay payment gateway start

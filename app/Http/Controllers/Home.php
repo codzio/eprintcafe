@@ -691,6 +691,14 @@ class Home extends Controller {
 
 	    	$customerAdd = CustomerAddressModel::where('user_id', customerId())->first();
 
+	    	$myCustomerAdd = [];
+
+	    	if (!empty($customerAdd)) {
+	    		$myCustomerAdd = json_encode($customerAdd->toArray());
+	    	} else {
+	    		$myCustomerAdd = json_encode($myCustomerAdd);
+	    	}
+
 	    	// $getCartData = CartModel::where('user_id', customerId())
 	    	// ->orderBy('cart.id', 'desc')
 	    	// ->first();
@@ -704,6 +712,13 @@ class Home extends Controller {
 
 	    	//$barcode = BarcodeModel::where(['is_active' => 1, 'is_used' => 0])->first();
 
+	    	$paidAmount = $productPrice->total;
+	    	$packagingCharges = 0;
+	    	if (setting('packaging_charges')) {
+	    		$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+    			$paidAmount += $packagingCharges;
+    		}
+
 	    	$orderObj = array(
 	    		'order_id' => $request->post('txnid'),
 	    		'user_id' => customerId(),
@@ -715,10 +730,13 @@ class Home extends Controller {
 	    		'discount' => $discount,
 	    		'shipping' => $shipping,
 	    		// 'paid_amount' => ceil($productPrice->total),
-	    		'paid_amount' => $productPrice->total,
+	    		// 'paid_amount' => $productPrice->total,
+	    		'packaging_charges' => $packagingCharges,
+	    		'paid_amount' => $paidAmount,
 	    		// 'price_details' => json_encode($productPrice),
 	    		'transaction_details' => json_encode($_POST),
-	    		'customer_address' => json_encode($customerAdd->toArray()),
+	    		// 'customer_address' => json_encode($customerAdd->toArray()),
+	    		'customer_address' => $myCustomerAdd,
 	    		'document_link' => $getDocumentLink,
 	    		'remark' => $remark,
 	    		'wetransfer_link' => $wetransferLink,

@@ -235,11 +235,15 @@ $("#kt_form_submit_calculate").click(function (e) {
                 if (res.additionalDiscount) {
                     $("#additionalDiscountData").html(res.additionalDiscount);
                     //$("#totalData").html(res.priceData.total-res.additionalDiscount);
-                    $("#totalData").html((res.priceData.total-res.additionalDiscount).toFixed(2));
+                    //$("#totalData").html((res.priceData.total-res.additionalDiscount).toFixed(2));
+                    $("#totalData").html((res.paidAmount-res.additionalDiscount).toFixed(2));
                 } else {
                     //$("#totalData").html(res.priceData.total);
-                    $("#totalData").html((res.priceData.total).toFixed(2));
+                    //$("#totalData").html((res.priceData.total).toFixed(2));
+                    $("#totalData").html((res.paidAmount).toFixed(2));
                 }
+
+                $("#totalPackagingCharges").html(res.packagingCharges);
 
                 // $("#kt_form_submit_calculate").hide();
                 // $("#kt_form_submit").show(); 
@@ -308,11 +312,15 @@ $("#kt_form_submit_save").click(function (e) {
                 if (res.additionalDiscount) {
                     $("#additionalDiscountData").html(res.additionalDiscount);
                     //$("#totalData").html(res.priceData.total-res.additionalDiscount);
-                    $("#totalData").html((res.priceData.total-res.additionalDiscount).toFixed(2));
+                    //$("#totalData").html((res.priceData.total-res.additionalDiscount).toFixed(2));
+                    $("#totalData").html((res.paidAmount-res.additionalDiscount).toFixed(2));
                 } else {
                     //$("#totalData").html(res.priceData.total);
-                    $("#totalData").html((res.priceData.total).toFixed(2));
+                    // $("#totalData").html((res.priceData.total).toFixed(2));
+                    $("#totalData").html((res.paidAmount).toFixed(2));
                 }
+
+                $("#totalPackagingCharges").html(res.packagingCharges);
 
                 $("#saveProductListTemp").html(res.saveProductListTemp);
 
@@ -446,15 +454,19 @@ $("#kt_form_submit_update_calculate").click(function (e) {
                 $("#discountData").html(res.priceData.discount);
                 $("#shippingData").html(res.priceData.shipping);
                 $("#subTotalData").html(res.priceData.subTotal);
-                //$("#totalData").html(res.priceData.total);
+                //$("#totalData").html(res.priceData.total);                
 
                 if (res.additionalDiscount) {
                     $("#additionalDiscountData").html(res.additionalDiscount);
-                    $("#totalData").html((res.priceData.total-res.additionalDiscount).toFixed(2));
+                    //$("#totalData").html((res.priceData.total-res.additionalDiscount).toFixed(2));
+                    $("#totalData").html((res.paidAmount-res.additionalDiscount).toFixed(2));
                 } else {
                     //$("#totalData").html(res.priceData.total);
-                    $("#totalData").html((res.priceData.total).toFixed(2));
+                    //$("#totalData").html((res.priceData.total).toFixed(2));
+                    $("#totalData").html((res.paidAmount).toFixed(2));
                 }
+
+                $("#totalPackagingCharges").html(res.packagingCharges);
 
                 // $("#kt_form_submit_update_calculate").hide();
                 // $("#kt_form_update_submit").show(); 

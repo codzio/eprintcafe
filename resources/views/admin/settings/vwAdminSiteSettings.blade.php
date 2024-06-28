@@ -129,6 +129,18 @@
 						</div>
 
 						<div class="row mb-6">                    
+							<label class="col-lg-3 col-form-label fw-semibold fs-6 required">Packaging Charges (%)</label>
+							<div class="col-lg-9">                        
+								<div class="row">
+									<div class="col-lg-12 fv-row">
+										<input min="0" type="number" name="packagingCharges" class="form-control form-control-lg form-control-solid mb-3 mb-lg-0" placeholder="Packaging Charges" value="{{ $setting->packaging_charges }}">
+										<span id="packagingChargesErr" class="text-danger"></span>
+									</div>                            
+								</div>
+							</div>                    
+						</div>
+
+						<div class="row mb-6">                    
 							<label class="col-lg-3 col-form-label fw-semibold fs-6 required">Copyright</label>
 							<div class="col-lg-9">                        
 								<div class="row">

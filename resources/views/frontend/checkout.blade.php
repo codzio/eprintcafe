@@ -405,9 +405,19 @@
                   <p>Discount <span id="discountData">{{ $productPrice->discount }}</span></p>
                   <p>Shipping Charge <span id="shippingData">{{ $productPrice->shipping }}</span></p>
                   <p>Sub Total <span id="subTotalData">{{ $productPrice->total-$productPrice->shipping-$productPrice->discount }}</span></p>
-                  
+
+                  @php $packagingCharges = 0; @endphp
+
+                  @if(setting('packaging_charges'))
+                  @php
+                    $subTotal = $productPrice->total-$productPrice->shipping-$productPrice->discount;
+                    $packagingCharges = ($subTotal*setting('packaging_charges'))/100;
+                  @endphp
+                  <p>Packaging Charges ({{ setting('packaging_charges') }}%) <span id="subTotalData">{{ $packagingCharges }}</span></p>
+                  @endif
+
                   <!-- SUB TOTAL -->
-                  <p class="all-total">TOTAL<span id="totalData">{{ $productPrice->total }}</span></p>
+                  <p class="all-total">TOTAL<span id="totalData">{{ $productPrice->total+$packagingCharges }}</span></p>
                 </div>
                 <div class="pay-meth">
                   <ul>

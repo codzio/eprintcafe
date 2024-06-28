@@ -1944,11 +1944,20 @@ class Orders extends Controller {
 	        		//check action
 	        		if ($action == 'calculate') {
 
+	        			$packagingCharges = 0;
+		        		$paidAmount = $priceData->total;
+		        		if (setting('packaging_charges')) {
+				    		$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+			    			$paidAmount += $packagingCharges;
+			    		}
+
 		        		$this->status = array(
 							'error' => false,
 							'priceData' => $priceData,
 							'totalWeight' => number_format($totalWeight, 2),
 							'additionalDiscount' => $additionalDiscount,
+							'packagingCharges' => $packagingCharges,
+							'paidAmount' => $paidAmount,
 						);
 
 		        	} elseif ($action == 'save') {
@@ -1987,13 +1996,22 @@ class Orders extends Controller {
 
 			        		$saveProductListTemp = view('admin/components/savedProductListData', compact('saveProductList'))->render();
 
+			        		$packagingCharges = 0;
+			        		$paidAmount = $priceData->total;
+			        		if (setting('packaging_charges')) {
+					    		$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+				    			$paidAmount += $packagingCharges;
+				    		}
+
         					$this->status = array(
 								'error' => false,
 								'msg' => 'The product has been added.',
 								'priceData' => $priceData,
 								'totalWeight' => number_format($totalWeight, 2),
 								'additionalDiscount' => $additionalDiscount,
-								'saveProductListTemp' => $saveProductListTemp
+								'saveProductListTemp' => $saveProductListTemp,
+								'packagingCharges' => $packagingCharges,
+								'paidAmount' => $paidAmount,
 							);
 
         				} else {
@@ -2106,6 +2124,16 @@ class Orders extends Controller {
 
 			        	$customerAdd = CustomerAddressModel::where('user_id', $userId)->first();
 
+			        	$paidAmount = $priceData->total;
+			        	$packagingCharges = 0;
+
+			        	if (setting('packaging_charges')) {
+			        		$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+			        		$paidAmount += $packagingCharges;
+			        	}
+
+			        	$paidAmount = $paidAmount-$additionalDiscount;
+
 			        	$orderObj = array(
 			        		'admin_id' => adminId(),
 			        		'order_id' => uniqid(),
@@ -2120,7 +2148,11 @@ class Orders extends Controller {
 			        		// 'paid_amount' => ceil($productPrice->total),
 			        		// 'paid_amount' => $productPrice->total,
 			        		//'paid_amount' => $totalAmount,
-			        		'paid_amount' => $priceData->total-$additionalDiscount,
+			        		// 'paid_amount' => $priceData->total-$additionalDiscount,
+
+			        		'packaging_charges' => $packagingCharges,
+			        		'paid_amount' => $paidAmount,
+
 			        		//'price_details' => json_encode($productPrice),
 			        		'transaction_details' => null,
 			        		'customer_address' => json_encode($customerAdd->toArray()),
@@ -2507,8 +2539,15 @@ class Orders extends Controller {
 
 			        		if ($action == 'calculate') {
 
-			        			//update amount				        		
+				        		$packagingCharges = 0;
+
+			        			//update amount		        		
 				        		$newPaidAmount = ($priceData->subTotal+$shipping)-$additionalDiscount;
+
+				        		if (setting('packaging_charges')) {
+						    		$packagingCharges = ($newPaidAmount*setting('packaging_charges'))/100;
+					    			$newPaidAmount += $packagingCharges;
+					    		}
 
 			        			OrderModel::where('id', $orderId)->update([
 			        				'paid_amount' => $newPaidAmount,
@@ -2528,6 +2567,8 @@ class Orders extends Controller {
 									'priceData' => $priceData,
 									'totalWeight' => number_format($totalWeight, 2),
 									'additionalDiscount' => $additionalDiscount,
+									'packagingCharges' => $packagingCharges,
+									'paidAmount' => $newPaidAmount,
 								);
 
 				        	} elseif ($action == 'save') {
@@ -2737,6 +2778,16 @@ class Orders extends Controller {
 					        	$customerAdd = CustomerAddressModel::where('user_id', $userId)->first();
 					        	$productName = ProductModel::where('id', $productId)->value('name');
 
+					        	$paidAmount = $priceData->total;
+					        	$packagingCharges = 0;
+
+					        	if (setting('packaging_charges')) {
+					        		$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+					        		$paidAmount += $packagingCharges;
+					        	}
+
+					        	$paidAmount = $paidAmount-$additionalDiscount;
+
 					        	$orderObj = array(
 					        		'order_id' => $getOrder->order_id,
 					        		'user_id' => $userId,
@@ -2749,7 +2800,11 @@ class Orders extends Controller {
 					        		'shipping' => $shipping,
 					        		// 'paid_amount' => ceil($productPrice->total),
 					        		// 'paid_amount' => $totalAmount,
-					        		'paid_amount' => $priceData->total-$additionalDiscount,
+					        		//'paid_amount' => $priceData->total-$additionalDiscount,
+
+					        		'packaging_charges' => $packagingCharges,
+		        					'paid_amount' => $paidAmount,
+
 					        		//'price_details' => json_encode($productPrice),
 					        		'transaction_details' => null,
 					        		'customer_address' => json_encode($customerAdd->toArray()),

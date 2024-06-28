@@ -514,6 +514,7 @@
                                 <p><strong>Additional Discount:</strong><span id="additionalDiscountData">0</span></p>
                                 <p><strong>Shipping Charge:</strong><span id="shippingData">0</span></p>
                                 <p><strong>Sub Total:</strong><span id="subTotalData">0</span></p>
+                                <p class="all-total"><strong>Packaging Charges:</strong><span id="totalPackagingCharges">0</span></p>
                                 <p class="all-total"><strong>Total:</strong><span id="totalData">0</span></p>
                             </div>
                         </div> 
@@ -967,6 +968,6 @@
 
         dataUrl = '{{ route("getAdminCustomers") }}';
     </script>
-    <script src="{{ asset('public/backend/js/admin/customers.js?v=2') }}"></script>
+    <script src="{{ asset('public/backend/js/admin/customers.js?v=3') }}"></script>
 
 @endsection

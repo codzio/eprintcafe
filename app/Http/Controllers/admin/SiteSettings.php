@@ -43,6 +43,7 @@ class SiteSettings extends Controller {
 			'favicon' => $setting->getSetting('favicon'),
 			'background_image' => $setting->getSetting('background_image'),
 			'website_name' => $setting->getSetting('website_name'),
+			'packaging_charges' => $setting->getSetting('packaging_charges'),
 			'copyright' => $setting->getSetting('copyright'),
 			
 			'header_scripts' => $setting->getSetting('header_scripts'),
@@ -121,6 +122,7 @@ class SiteSettings extends Controller {
 	            'favicon' => 'required|numeric',
 	            'backgroundImage' => 'required|numeric',
 	            'websiteName' => 'required',
+	            'packagingCharges' => 'required',
 	            'copyright' => 'required',
 	        ]);
 
@@ -142,6 +144,7 @@ class SiteSettings extends Controller {
 	        	$setting->updateSetting([
 				    'admin_logo' => $request->post('adminLogo'),
 				    'website_logo' => $request->post('websiteLogo'),
+				    'packaging_charges' => $request->post('packagingCharges'),
 				    'favicon' => $request->post('favicon'),
 				    'background_image' => $request->post('backgroundImage'),
 				    'website_name' => $request->post('websiteName'),

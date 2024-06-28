@@ -160,6 +160,16 @@
                                <td>XXXX</td>
                                @endif
                            </tr>
+
+                           <tr>
+                               <th>Packaging Charges</th>
+                               @if($adminData->role_id == 1)
+                               <td style="color:green;font-weight: bold;">{{ $order->packaging_charges }}</td>
+                               @else
+                               <td>XXXX</td>
+                               @endif
+                           </tr>
+
                            <tr>
                                <th>Paid Amount</th>
                                @if($adminData->role_id == 1)

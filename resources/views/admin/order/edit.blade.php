@@ -558,8 +558,11 @@
                                 <p><strong>Discount:</strong><span id="discountData">{{ $order->discount }}</span></p>
                                 <p><strong>Additional Discount:</strong><span id="additionalDiscountData">{{ ($order->additional_discount)? $order->additional_discount:0 }}</span></p>
                                 <p><strong>Shipping Charge:</strong><span id="shippingData">{{ $order->shipping }}</span></p>
-                                <p><strong>Sub Total:</strong><span id="subTotalData">{{ $priceDetails->subTotal }}</span></p>                                  
-                                <p class="all-total"><strong>Total:</strong><span id="totalData">{{ $priceDetails->total-$order->additional_discount }}</span></p>
+                                <p><strong>Sub Total:</strong><span id="subTotalData">{{ $priceDetails->subTotal }}</span></p>
+                                <p class="all-total"><strong>Packaging Charges:</strong><span id="totalPackagingCharges">{{ $order->packaging_charges }}</span></p>                    
+                                <!-- <p class="all-total"><strong>Total:</strong><span id="totalData">{{ $priceDetails->total-$order->additional_discount }}</span></p> -->
+
+                                <p class="all-total"><strong>Total:</strong><span id="totalData">{{ $order->paid_amount-$order->additional_discount }}</span></p>
                             </div>
                         </div>
 
@@ -1026,6 +1029,6 @@
 
         dataUrl = '{{ route("getAdminCustomers") }}';        
     </script>
-    <script src="{{ asset('public/backend/js/admin/customers.js?v=2') }}"></script>
+    <script src="{{ asset('public/backend/js/admin/customers.js?v=3') }}"></script>
 
 @endsection
