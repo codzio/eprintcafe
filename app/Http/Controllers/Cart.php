@@ -24,6 +24,7 @@ use App\Models\ShippingModel;
 use App\Models\CartModel;
 use App\Models\CouponModel;
 use App\Models\OrderModel;
+use App\Models\CustomerAddressModel;
 
 class Cart extends Controller {
 
@@ -552,71 +553,207 @@ class Cart extends Controller {
 		                	Session::forget('couponSess');
 
 		                	$productPrice = productPriceMulti();
-		                	// $subTotal = $productPrice->total;
-		                	$subTotal = $productPrice->subTotal;
-                			$deliveryCharges = 0;
 
-                			//check min cart amount
-                			if (!empty($getMinCartAmount)) {
-                				if ($subTotal < $getMinCartAmount) {
-                					return response()->json([
-                						'error' => true,
+		                	if ($getCoupon->coupon_for == 'shipping') {
+
+		                		//check if customer added a shipping details
+		                		$getCustomerAdd = CustomerAddressModel::where('user_id', customerId())->latest()->first();
+
+		                		if (!empty($getCustomerAdd)) {
+		                				
+		                			$shippingPincode = $getCustomerAdd->shipping_pincode;
+		                			$isPincodeExist = ShippingModel::where(['pincode' => $shippingPincode, 'is_active' => 1])->first();
+
+		                			if (!empty($isPincodeExist)) {
+		                				
+		                				$productPrice = productPriceMulti();
+						        		$totalAmount = $productPrice->total;
+						        		$subTotal = $productPrice->subTotal;
+						        		$totalWeight = cartWeightMulti(); //in kg
+						        		$totalWeightInGm = $totalWeight*1000;
+
+						        		$shipping = 0;
+
+						        		//check free shipping
+						        		if ($isPincodeExist->free_shipping && ($totalAmount >= $isPincodeExist->free_shipping)) {
+						        			$shipping = 0;
+						        		} elseif ($totalWeightInGm <= 500) {
+						        			$shipping = $isPincodeExist->under_500gm;
+						        		} elseif ($totalWeightInGm <= 1000) {
+						        			$shipping = $isPincodeExist->from500_1000gm;
+						        		} elseif ($totalWeightInGm <= 2000) {
+						        			$shipping = $isPincodeExist->from1000_2000gm;
+						        		} elseif ($totalWeightInGm <= 3000) {
+						        			$shipping = $isPincodeExist->from2000_3000gm;
+						        		} else {
+						        			$shipping = $isPincodeExist->from2000_3000gm;
+						        		}
+
+						        		if (!$shipping) {
+						        			return response(array(
+												'error' => true,
+												'eType' => 'final',
+												'msg' => 'The coupon cannot apply on 0 shipping.'
+											));
+						        		}
+
+						        		//check min cart amount
+			                			if (!empty($getMinCartAmount)) {
+			                				if ($subTotal < $getMinCartAmount) {
+			                					return response()->json([
+			                						'error' => true,
+													'eType' => 'final',
+													'msg' => 'The minimum cart amount should be Rs. '. $getMinCartAmount
+			                					]);
+			                				}
+			                			}
+
+			                			$deliveryCharges = 0;
+
+			                			$discountRate = $getCoupon->coupon_price;
+			                			if ($getCoupon->coupon_type == 'percentage') {
+			                				$discount = ($shipping*$discountRate)/100;
+			                			} else {
+			                				$discount = $discountRate;
+			                			}
+
+			                			//check max discount
+			                			$maxDiscount = $getCoupon->max_discount;
+
+			                			if (!empty($maxDiscount)) {
+			                				if ($discount > $maxDiscount) {
+			                					$discount = $maxDiscount;
+			                				}
+			                			}
+
+			                			$totalDiscount = $subTotal-$discount;
+			                			$grandTotal = $subTotal+$deliveryCharges-$discount;
+
+			                			$sessionObj = array(
+							              'coupon_id' => $getCoupon->id,
+							              'coupon_for' => $getCoupon->coupon_for,
+							              'coupon_code' => $getCoupon->coupon_code,
+							              'discount' => 0,
+							            );
+						            
+						            	$request->session()->put('couponSess', $sessionObj);
+
+						            	$shippingSessObj = [
+						        			'pincode' => $getCustomerAdd->shipping_pincode,
+						        			'shipping' => $discount
+						        		];
+
+						        		$request->session()->put('shippingSess', $shippingSessObj);
+
+						            	$priceData = productPriceMulti();
+
+						            	// $paidAmount = $priceData->total;
+						            	$paidAmount = $priceData->subTotal;
+						            	$packagingCharges = 0;
+						            	if (setting('packaging_charges')) {
+						            		$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+						        			$paidAmount += $packagingCharges;
+						        		}
+
+						        		$paidAmount += $priceData->shipping;
+						        		$paidAmount -= $priceData->discount;
+
+						            	$this->status = array(
+											'error' => false,
+											'discount' => $discount,
+											'grandTotal' => $grandTotal,
+											'priceData' => $priceData,
+											'paidAmount' => $paidAmount,
+											'packagingCharges' => $packagingCharges,
+											'msg' => 'The coupon has been applied'
+										);
+
+		                			} else {
+		                				return response(array(
+											'error' => true,
+											'eType' => 'final',
+											'msg' => 'The delivery is not available on this pincode.'
+										));
+		                			}
+
+		                		} else {
+		                			return response(array(
+										'error' => true,
 										'eType' => 'final',
-										'msg' => 'The minimum cart amount should be Rs. '. $getMinCartAmount
-                					]);
-                				}
-                			}
-                			
-                			$discountRate = $getCoupon->coupon_price;
-                			if ($getCoupon->coupon_type == 'percentage') {
-                				$discount = ($subTotal*$discountRate)/100;
-                			} else {
-                				$discount = $discountRate;
-                			}
+										'msg' => 'Please enter your shipping details.'
+									));
+		                		}
+		                		
+		                	} else {
 
-                			//check max discount
-                			$maxDiscount = $getCoupon->max_discount;
+		                		// $subTotal = $productPrice->total;
+			                	$subTotal = $productPrice->subTotal;
+	                			$deliveryCharges = 0;
 
-                			if (!empty($maxDiscount)) {
-                				if ($discount > $maxDiscount) {
-                					$discount = $maxDiscount;
-                				}
-                			}
+	                			//check min cart amount
+	                			if (!empty($getMinCartAmount)) {
+	                				if ($subTotal < $getMinCartAmount) {
+	                					return response()->json([
+	                						'error' => true,
+											'eType' => 'final',
+											'msg' => 'The minimum cart amount should be Rs. '. $getMinCartAmount
+	                					]);
+	                				}
+	                			}
 
-                			$totalDiscount = $subTotal-$discount;
-                			$grandTotal = $subTotal+$deliveryCharges-$discount;
+	                			$discountRate = $getCoupon->coupon_price;
+	                			if ($getCoupon->coupon_type == 'percentage') {
+	                				$discount = ($subTotal*$discountRate)/100;
+	                			} else {
+	                				$discount = $discountRate;
+	                			}
 
-                			$sessionObj = array(
-				              'coupon_id' => $getCoupon->id,
-				              'coupon_for' => $getCoupon->coupon_for,
-				              'coupon_code' => $getCoupon->coupon_code,
-				              'discount' => $discount,
-				            );
-			            
-			            	$request->session()->put('couponSess', $sessionObj);
+	                			//check max discount
+	                			$maxDiscount = $getCoupon->max_discount;
 
-			            	$priceData = productPriceMulti();
+	                			if (!empty($maxDiscount)) {
+	                				if ($discount > $maxDiscount) {
+	                					$discount = $maxDiscount;
+	                				}
+	                			}
 
-			            	// $paidAmount = $priceData->total;
-			            	$paidAmount = $priceData->subTotal;
-			            	$packagingCharges = 0;
-			            	if (setting('packaging_charges')) {
-			            		$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
-			        			$paidAmount += $packagingCharges;
-			        		}
+	                			$totalDiscount = $subTotal-$discount;
+	                			$grandTotal = $subTotal+$deliveryCharges-$discount;
 
-			        		$paidAmount += $priceData->shipping;
-			        		$paidAmount -= $priceData->discount;
+	                			$sessionObj = array(
+					              'coupon_id' => $getCoupon->id,
+					              'coupon_for' => $getCoupon->coupon_for,
+					              'coupon_code' => $getCoupon->coupon_code,
+					              'discount' => $discount,
+					            );
+				            
+				            	$request->session()->put('couponSess', $sessionObj);
 
-			            	$this->status = array(
-								'error' => false,
-								'discount' => $discount,
-								'grandTotal' => $grandTotal,
-								'priceData' => $priceData,
-								'paidAmount' => $paidAmount,
-								'packagingCharges' => $packagingCharges,
-								'msg' => 'The coupon has been applied'
-							);
+				            	$priceData = productPriceMulti();
+
+				            	// $paidAmount = $priceData->total;
+				            	$paidAmount = $priceData->subTotal;
+				            	$packagingCharges = 0;
+				            	if (setting('packaging_charges')) {
+				            		$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+				        			$paidAmount += $packagingCharges;
+				        		}
+
+				        		$paidAmount += $priceData->shipping;
+				        		$paidAmount -= $priceData->discount;
+
+				            	$this->status = array(
+									'error' => false,
+									'discount' => $discount,
+									'grandTotal' => $grandTotal,
+									'priceData' => $priceData,
+									'paidAmount' => $paidAmount,
+									'packagingCharges' => $packagingCharges,
+									'msg' => 'The coupon has been applied'
+								);
+
+
+		                	}
 
 		                } else {
 		                	$this->status = array(

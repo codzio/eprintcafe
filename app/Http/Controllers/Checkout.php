@@ -372,7 +372,7 @@ class Checkout extends Controller {
 	        		
 	        		//check if customer address exist
 	        		$userId = customerId();
-	        		$getCustomerAdd = CustomerAddressModel::where('user_id', $userId)->first();
+	        		$getCustomerAdd = CustomerAddressModel::where('user_id', $userId)->latest()->first();
 
 	        		//Remove shipping session
 	        		Session::forget('shippingSess');
@@ -425,6 +425,7 @@ class Checkout extends Controller {
 	        		$totalWeight = cartWeightMulti(); //in kg
 	        		$totalWeightInGm = $totalWeight*1000;
 
+	        		$couponSess = Session::get('couponSess');
 
 	        		$shipping = 0;
 
@@ -443,12 +444,69 @@ class Checkout extends Controller {
 	        			$shipping = $isPincodeExist->from2000_3000gm;
 	        		}
 
-	        		$shippingSessObj = [
-	        			'pincode' => $request->post('shippingPincode'),
-	        			'shipping' => $shipping
-	        		];
+	        		//check if coupon session exist
+	        		if (!empty($couponSess)) {
+	        			//check coupon for
+	        			if ($couponSess['coupon_for'] == 'shipping') {
+	        				
+	        				$getCoupon = CouponModel::where(['id' => $couponSess['coupon_id'], 'is_active' => 1])->first();
 
-	        		$request->session()->put('shippingSess', $shippingSessObj);
+	        				if (!empty($getCoupon)) {
+
+	        					//check coupon usage
+			                	$getCouponUsage = $getCoupon->coupon_usage;
+
+			                	//Min Cart Amount
+			                	$getMinCartAmount = $getCoupon->min_cart_amount;
+	        					
+	        					if (!empty($getMinCartAmount)) {
+	                				if (productPriceMulti()->subTotal < $getMinCartAmount) {
+	                					return response()->json([
+	                						'error' => true,
+											'eType' => 'final',
+											'msg' => 'The minimum cart amount should be Rs. '. $getMinCartAmount
+	                					]);
+	                				}
+	                			}
+
+	                			$deliveryCharges = 0;
+
+	                			$discountRate = $getCoupon->coupon_price;
+	                			if ($getCoupon->coupon_type == 'percentage') {
+	                				$discount = ($shipping*$discountRate)/100;
+	                			} else {
+	                				$discount = $discountRate;
+	                			}
+
+	                			//check max discount
+	                			$maxDiscount = $getCoupon->max_discount;
+
+	                			if (!empty($maxDiscount)) {
+	                				if ($discount > $maxDiscount) {
+	                					$discount = $maxDiscount;
+	                				}
+	                			}
+
+	                			$shippingSessObj = [
+				        			'pincode' => $request->post('shippingPincode'),
+				        			'shipping' => $discount
+				        		];
+
+				        		$request->session()->put('shippingSess', $shippingSessObj);
+
+	        				}
+
+	        			}
+	        		} else {
+
+	        			$shippingSessObj = [
+		        			'pincode' => $request->post('shippingPincode'),
+		        			'shipping' => $shipping
+		        		];
+
+		        		$request->session()->put('shippingSess', $shippingSessObj);
+
+	        		}
 
 	        		$remarkSessObj = [
 	        			'remark' => $request->post('remark'),
@@ -473,7 +531,6 @@ class Checkout extends Controller {
 	        		// $productSpec = productSpec(getCartId());
 	        		$productSpec = 'eprintcafe';
 	        		$shippingSess = Session::get('shippingSess');
-	        		$couponSess = Session::get('couponSess');
 	        		$documentSess = Session::get('documents');
 	        		
 	        		//check document session
