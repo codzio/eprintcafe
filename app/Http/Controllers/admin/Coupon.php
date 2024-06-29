@@ -266,8 +266,12 @@ class Coupon extends Controller {
 			$validator = Validator::make($request->post(), [
 	            'coupon_name' => 'required|regex:/^[\pL\s\-]+$/u',
 	            'coupon_code' => 'required|unique:coupon,coupon_code',
+	            'coupon_for' => 'required|in:product,shipping',
 	            'coupon_type' => 'required|in:flat,percentage',
 	            'coupon_usage' => 'required|in:single,multiple',
+	            'coupon_price' => 'required|numeric',
+	            'minCartAmount' => 'sometimes|nullable|numeric',
+	            'maxDiscount' => 'sometimes|nullable|numeric',
 	            'coupon_price' => 'required|numeric',
 	            'start_date' => 'sometimes|nullable|date',
 	            'end_date' => 'sometimes|nullable|date',
@@ -291,9 +295,12 @@ class Coupon extends Controller {
 	        		'admin_id' => adminId(),
 	        		'coupon_name' => $request->post('coupon_name'),
 	        		'coupon_code' => $request->post('coupon_code'),
+	        		'coupon_for' => $request->post('coupon_for'),
 	        		'coupon_type' => $request->post('coupon_type'),
 	        		'coupon_usage' => $request->post('coupon_usage'),
 	        		'coupon_price' => $request->post('coupon_price'),
+	        		'min_cart_amount' => $request->post('minCartAmount'),
+	        		'max_discount' => $request->post('maxDiscount'),
 	        		'start_date' => $request->post('start_date'),
 	        		'end_date' => $request->post('end_date'),
 	        		'is_active' => $request->post('status'),
@@ -353,7 +360,10 @@ class Coupon extends Controller {
 	            'coupon_price' => 'required|numeric',
 	            'start_date' => 'sometimes|nullable|date',
 	            'end_date' => 'sometimes|nullable|date',
-	            'status' => 'required|numeric|in:0,1'
+	            'status' => 'required|numeric|in:0,1',
+	            'coupon_for' => 'required|in:product,shipping',
+				'minCartAmount' => 'sometimes|nullable|numeric',
+				'maxDiscount' => 'sometimes|nullable|numeric',
 	        ]);
 
 	        if ($validator->fails()) {
@@ -391,6 +401,9 @@ class Coupon extends Controller {
 	        		'start_date' => $request->post('start_date'),
 	        		'end_date' => $request->post('end_date'),
 	        		'is_active' => $request->post('status'),
+	        		'coupon_for' => $request->post('coupon_for'),
+					'min_cart_amount' => $request->post('minCartAmount'),
+					'max_discount' => $request->post('maxDiscount'),
 	        	];
 
 	        	$isUpdated = CouponModel::where('id', $id)->update($obj);

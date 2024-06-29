@@ -48,6 +48,22 @@
                         </div>
 
                         <div class="row mb-6">                    
+                            <label class="col-lg-3 col-form-label fw-semibold fs-6 required">Coupon For</label>
+                            <div class="col-lg-9">                        
+                                <div class="row">
+                                    <div class="col-lg-12 fv-row">
+                                        <select class="form-select mb-2" name="coupon_for" data-control="select2" data-hide-search="true" data-placeholder="Select Coupon For">
+                                            <option value="">Select Coupon For</option>
+                                            <option {{ $coupon->coupon_for == 'product'? 'selected':'' }} value="product">Product</option>
+                                            <option {{ $coupon->coupon_for == 'shipping'? 'selected':'' }} value="shipping">Shipping</option>
+                                        </select>
+                                        <span id="coupon_forErr" class="text-danger"></span>
+                                    </div>                            
+                                </div>
+                            </div>                    
+                        </div>
+
+                        <div class="row mb-6">                    
                             <label class="col-lg-3 col-form-label fw-semibold fs-6 required">Coupon type</label>
                             <div class="col-lg-9">                        
                                 <div class="row">
@@ -91,6 +107,29 @@
                             </div>                    
                         </div>
 
+                        <div class="row mb-6">                    
+                            <label class="col-lg-3 col-form-label fw-semibold fs-6">Min Cart Amount</label>
+                            <div class="col-lg-9">                        
+                                <div class="row">
+                                    <div class="col-lg-12 fv-row">
+                                        <input min="0" type="number" name="minCartAmount" class="form-control form-control-lg form-control-solid mb-3 mb-lg-0" placeholder="Min Cart Amount" value="{{ $coupon->min_cart_amount }}">
+                                        <span id="minCartAmountErr" class="text-danger"></span>
+                                    </div>                            
+                                </div>
+                            </div>                    
+                        </div>
+
+                        <div class="row mb-6">                    
+                            <label class="col-lg-3 col-form-label fw-semibold fs-6">Max Discount</label>
+                            <div class="col-lg-9">                        
+                                <div class="row">
+                                    <div class="col-lg-12 fv-row">
+                                        <input min="0" type="number" name="maxDiscount" class="form-control form-control-lg form-control-solid mb-3 mb-lg-0" placeholder="Max Discount" value="{{ $coupon->max_discount }}">
+                                        <span id="maxDiscountErr" class="text-danger"></span>
+                                    </div>                            
+                                </div>
+                            </div>                    
+                        </div>
 
                         <div class="row mb-6">                    
                             <label class="col-lg-3 col-form-label fw-semibold fs-6 required">Start Date</label>

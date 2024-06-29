@@ -260,6 +260,16 @@ class Checkout extends Controller {
 
 	        		$priceData = productPriceMulti();
 
+	            	// $paidAmount = $priceData->total;
+	            	$paidAmount = $priceData->subTotal;
+	            	$packagingCharges = 0;
+	            	if (setting('packaging_charges')) {
+	            		$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+	        			$paidAmount += $packagingCharges;
+	        		}
+
+	        		$paidAmount += $priceData->shipping;
+
 	        		// echo "<pre>";
 	        		// print_r($priceData);
 	        		// die();
@@ -267,7 +277,9 @@ class Checkout extends Controller {
 	        		$this->status = array(
 						'error' => false,						
 						'msg' => 'The address has been saved',
-						'priceData' => $priceData
+						'priceData' => $priceData,
+						'paidAmount' => $paidAmount,
+						'packagingCharges' => $packagingCharges,
 					);
 
 	        	} else {
@@ -487,12 +499,17 @@ class Checkout extends Controller {
 	        		// $paidAmount = ceil($priceData->total*100);
 	        		//$paidAmount = $priceData->total*100;
 	        		//$paidAmount = 1;
-	        		$paidAmount = $priceData->total;
-
+	        		// $paidAmount = $priceData->total;
+	        		$paidAmount = $priceData->subTotal;
+	        		$packagingCharges = 0;
 	        		//Add Packaging Charges
 	        		if (setting('packaging_charges')) {
-	        			$paidAmount += ($paidAmount*setting('packaging_charges'))/100;
+	        			$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+			        	$paidAmount += $packagingCharges;
 	        		}
+
+	        		$paidAmount += $priceData->shipping;
+	        		$paidAmount -= $priceData->discount;
 
 	        		$transactionId = uniqid();
 

@@ -413,7 +413,7 @@
                     $subTotal = $productPrice->total-$productPrice->shipping-$productPrice->discount;
                     $packagingCharges = ($subTotal*setting('packaging_charges'))/100;
                   @endphp
-                  <p>Packaging Charges ({{ setting('packaging_charges') }}%) <span id="subTotalData">{{ $packagingCharges }}</span></p>
+                  <p>Packaging Charges ({{ setting('packaging_charges') }}%) <span id="packagingChargeData">{{ $packagingCharges }}</span></p>
                   @endif
 
                   <!-- SUB TOTAL -->
@@ -589,7 +589,10 @@
             $("#shippingData").html(res.priceData.shipping)
             // $("#subTotalData").html(parseFloat(subTotal).toFixed(2));
             $("#subTotalData").html(res.priceData.subTotal);
-            $("#totalData").html(res.priceData.total)
+            //$("#totalData").html(res.priceData.total)
+
+            $("#packagingChargeData").html(res.packagingCharges);
+            $("#totalData").html(res.paidAmount);
           }
 
           $("#customerAddressBtn").html('Submit')
@@ -678,7 +681,10 @@
             // $("#subTotalData").html(parseFloat(subTotal).toFixed(2))
             $("#subTotalData").html(res.priceData.subTotal);
             //$("#subTotalData").html(parseFloat(subTotal));
-            $("#totalData").html(res.priceData.total);
+            //$("#totalData").html(res.priceData.total);
+
+            $("#packagingChargeData").html(res.packagingCharges);
+            $("#totalData").html(res.paidAmount);
 
             // $("#totalDiscount").html(res.discount);
             // $("#totalCost").html(res.grandTotal);

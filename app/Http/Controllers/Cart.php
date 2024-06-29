@@ -520,6 +520,9 @@ class Cart extends Controller {
 		                	//check coupon usage
 		                	$getCouponUsage = $getCoupon->coupon_usage;
 
+		                	//Min Cart Amount
+		                	$getMinCartAmount = $getCoupon->min_cart_amount;
+
 		                	if ($getCouponUsage == 'single') {
 		                		//check if coupon is already used
 
@@ -552,6 +555,17 @@ class Cart extends Controller {
 		                	// $subTotal = $productPrice->total;
 		                	$subTotal = $productPrice->subTotal;
                 			$deliveryCharges = 0;
+
+                			//check min cart amount
+                			if (!empty($getMinCartAmount)) {
+                				if ($subTotal < $getMinCartAmount) {
+                					return response()->json([
+                						'error' => true,
+										'eType' => 'final',
+										'msg' => 'The minimum cart amount should be Rs. '. $getMinCartAmount
+                					]);
+                				}
+                			}
                 			
                 			$discountRate = $getCoupon->coupon_price;
                 			if ($getCoupon->coupon_type == 'percentage') {
@@ -560,11 +574,21 @@ class Cart extends Controller {
                 				$discount = $discountRate;
                 			}
 
+                			//check max discount
+                			$maxDiscount = $getCoupon->max_discount;
+
+                			if (!empty($maxDiscount)) {
+                				if ($discount > $maxDiscount) {
+                					$discount = $maxDiscount;
+                				}
+                			}
+
                 			$totalDiscount = $subTotal-$discount;
                 			$grandTotal = $subTotal+$deliveryCharges-$discount;
 
                 			$sessionObj = array(
 				              'coupon_id' => $getCoupon->id,
+				              'coupon_for' => $getCoupon->coupon_for,
 				              'coupon_code' => $getCoupon->coupon_code,
 				              'discount' => $discount,
 				            );
@@ -573,11 +597,24 @@ class Cart extends Controller {
 
 			            	$priceData = productPriceMulti();
 
+			            	// $paidAmount = $priceData->total;
+			            	$paidAmount = $priceData->subTotal;
+			            	$packagingCharges = 0;
+			            	if (setting('packaging_charges')) {
+			            		$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+			        			$paidAmount += $packagingCharges;
+			        		}
+
+			        		$paidAmount += $priceData->shipping;
+			        		$paidAmount -= $priceData->discount;
+
 			            	$this->status = array(
 								'error' => false,
 								'discount' => $discount,
 								'grandTotal' => $grandTotal,
 								'priceData' => $priceData,
+								'paidAmount' => $paidAmount,
+								'packagingCharges' => $packagingCharges,
 								'msg' => 'The coupon has been applied'
 							);
 
@@ -601,7 +638,7 @@ class Cart extends Controller {
 	        		$this->status = array(
 						'error' => true,
 						'eType' => 'final',
-						'msg' => 'Something went wrong'
+						'msg' => 'There are no cart data found.'
 					);
 	        	}
 

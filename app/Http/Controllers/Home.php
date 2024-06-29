@@ -712,12 +712,22 @@ class Home extends Controller {
 
 	    	//$barcode = BarcodeModel::where(['is_active' => 1, 'is_used' => 0])->first();
 
-	    	$paidAmount = $productPrice->total;
-	    	$packagingCharges = 0;
-	    	if (setting('packaging_charges')) {
-	    		$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
-    			$paidAmount += $packagingCharges;
+	    	// $paidAmount = $productPrice->total;
+	    	// $packagingCharges = 0;
+	    	// if (setting('packaging_charges')) {
+	    	// 	$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+    		// 	$paidAmount += $packagingCharges;
+    		// }
+
+    		$paidAmount = $productPrice->subTotal;
+    		$packagingCharges = 0;
+    		if (setting('packaging_charges')) {
+    			$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+	        	$paidAmount += $packagingCharges;
     		}
+
+    		$paidAmount += $productPrice->shipping;
+	        $paidAmount -= $productPrice->discount;
 
 	    	$orderObj = array(
 	    		'order_id' => $request->post('txnid'),

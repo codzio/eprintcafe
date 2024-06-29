@@ -2542,16 +2542,19 @@ class Orders extends Controller {
 				        		$packagingCharges = 0;
 
 			        			//update amount		        		
-				        		$newPaidAmount = ($priceData->subTotal+$shipping)-$additionalDiscount;
+				        		$newPaidAmount = ($priceData->subTotal+$shipping);
 
 				        		if (setting('packaging_charges')) {
 						    		$packagingCharges = ($newPaidAmount*setting('packaging_charges'))/100;
 					    			$newPaidAmount += $packagingCharges;
 					    		}
 
+					    		$newPaidAmount = $newPaidAmount-$additionalDiscount;
+
 			        			OrderModel::where('id', $orderId)->update([
 			        				'paid_amount' => $newPaidAmount,
 			        				'shipping' => $shipping,
+			        				'packaging_charges' => $packagingCharges,
 			        				'additional_discount' => $additionalDiscount,
 			        				'is_shipping_free' => ($isShippingFree)? 1:0,
 			        			]);
@@ -2627,9 +2630,9 @@ class Orders extends Controller {
 
 					        		$additionalDiscount = $request->post('additionalDiscount');
 
-					        		if ($additionalDiscount) {
-					        			$totalAmount = $totalAmount-$additionalDiscount;
-					        		}
+					        		// if ($additionalDiscount) {
+					        		// 	$totalAmount = $totalAmount-$additionalDiscount;
+					        		// }
 
 					        		$shipping = 0;
 					        		$isShippingFree = $request->post('shippingFree');
@@ -2653,9 +2656,21 @@ class Orders extends Controller {
 						        		}
 					        		}
 
+					        		$paidAmount = $totalAmount+$shipping;
+						        	$packagingCharges = 0;
+
+						        	if (setting('packaging_charges')) {
+						        		$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+						        		$paidAmount += $packagingCharges;
+						        	}
+
+						        	$paidAmount = $paidAmount-$additionalDiscount;
+
 					        		$updateOrderObj = array(
 						        		'shipping' => $shipping,
-						        		'paid_amount' => $totalAmount+$shipping,
+						        		// 'paid_amount' => $totalAmount+$shipping,
+						        		'paid_amount' => $paidAmount,
+						        		'packaging_charges' => $packagingCharges,
 						        		'additional_discount' => $additionalDiscount,
 						        		'is_shipping_free' => $request->post('shippingFree')? 1:0,
 						        	);

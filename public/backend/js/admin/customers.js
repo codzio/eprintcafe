@@ -459,7 +459,8 @@ $("#kt_form_submit_update_calculate").click(function (e) {
                 if (res.additionalDiscount) {
                     $("#additionalDiscountData").html(res.additionalDiscount);
                     //$("#totalData").html((res.priceData.total-res.additionalDiscount).toFixed(2));
-                    $("#totalData").html((res.paidAmount-res.additionalDiscount).toFixed(2));
+                    //$("#totalData").html((res.paidAmount-res.additionalDiscount).toFixed(2));
+                    $("#totalData").html((res.paidAmount).toFixed(2))
                 } else {
                     //$("#totalData").html(res.priceData.total);
                     //$("#totalData").html((res.priceData.total).toFixed(2));

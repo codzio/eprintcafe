@@ -562,7 +562,8 @@
                                 <p class="all-total"><strong>Packaging Charges:</strong><span id="totalPackagingCharges">{{ $order->packaging_charges }}</span></p>                    
                                 <!-- <p class="all-total"><strong>Total:</strong><span id="totalData">{{ $priceDetails->total-$order->additional_discount }}</span></p> -->
 
-                                <p class="all-total"><strong>Total:</strong><span id="totalData">{{ $order->paid_amount-$order->additional_discount }}</span></p>
+                                <!-- <p class="all-total"><strong>Total:</strong><span id="totalData">{{ $order->paid_amount-$order->additional_discount }}</span></p> -->
+                                <p class="all-total"><strong>Total:</strong><span id="totalData">{{ $order->paid_amount; }}</span></p>
                             </div>
                         </div>
 
@@ -1029,6 +1030,6 @@
 
         dataUrl = '{{ route("getAdminCustomers") }}';        
     </script>
-    <script src="{{ asset('public/backend/js/admin/customers.js?v=3') }}"></script>
+    <script src="{{ asset('public/backend/js/admin/customers.js?v=4') }}"></script>
 
 @endsection
