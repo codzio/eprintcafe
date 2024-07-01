@@ -1900,10 +1900,9 @@ class Orders extends Controller {
 
 	        		$additionalDiscount = $request->post('additionalDiscount');
 
-	        		if ($additionalDiscount) {
-	        			$totalAmount = $totalAmount-$additionalDiscount;
-	        		}
-
+	        		// if ($additionalDiscount) {
+	        		// 	$totalAmount = $totalAmount-$additionalDiscount;
+	        		// }
 
 	        		$shipping = 0;
 
@@ -1950,6 +1949,10 @@ class Orders extends Controller {
 				    		$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
 			    			$paidAmount += $packagingCharges;
 			    		}
+
+		        		if ($additionalDiscount) {
+		        			$paidAmount = $paidAmount-$additionalDiscount;
+		        		}
 
 		        		$this->status = array(
 							'error' => false,
@@ -2002,6 +2005,10 @@ class Orders extends Controller {
 					    		$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
 				    			$paidAmount += $packagingCharges;
 				    		}
+
+			        		if ($additionalDiscount) {
+			        			$paidAmount = $paidAmount-$additionalDiscount;
+			        		}
 
         					$this->status = array(
 								'error' => false,
@@ -2497,9 +2504,9 @@ class Orders extends Controller {
 
 			        		$additionalDiscount = $request->post('additionalDiscount');
 
-			        		if ($additionalDiscount) {
-			        			$totalAmount = $totalAmount-$additionalDiscount;
-			        		}
+			        		// if ($additionalDiscount) {
+			        		// 	$totalAmount = $totalAmount-$additionalDiscount;
+			        		// }
 
 			        		$shipping = 0;
 

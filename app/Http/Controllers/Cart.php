@@ -626,6 +626,13 @@ class Cart extends Controller {
 			                				}
 			                			}
 
+			                			$newShipping = $shipping;
+			                			//check shipping charge
+			                			if ($discount >= $shipping) {
+			                				$newShipping = 0;
+			                				$discount = 0;
+			                			}
+
 			                			$totalDiscount = $subTotal-$discount;
 			                			$grandTotal = $subTotal+$deliveryCharges-$discount;
 
@@ -655,7 +662,12 @@ class Cart extends Controller {
 						        			$paidAmount += $packagingCharges;
 						        		}
 
-						        		$paidAmount += $priceData->shipping;
+						        		// $paidAmount += $priceData->shipping;
+						        		if ($newShipping) {
+						        			$paidAmount += $priceData->shipping;
+						        		} else {
+						        			$paidAmount += $newShipping;
+						        		}
 						        		$paidAmount -= $priceData->discount;
 
 						            	$this->status = array(

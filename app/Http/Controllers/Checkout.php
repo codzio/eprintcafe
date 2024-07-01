@@ -487,6 +487,13 @@ class Checkout extends Controller {
 	                				}
 	                			}
 
+	                			$newShipping = $shipping;
+	                			//check shipping charge
+	                			if ($discount >= $shipping) {
+	                				$newShipping = 0;
+	                				$discount = 0;
+	                			}
+
 	                			$shippingSessObj = [
 				        			'pincode' => $request->post('shippingPincode'),
 				        			'shipping' => $discount
@@ -498,6 +505,8 @@ class Checkout extends Controller {
 
 	        			}
 	        		} else {
+
+	        			$newShipping = $shipping;
 
 	        			$shippingSessObj = [
 		        			'pincode' => $request->post('shippingPincode'),
@@ -565,7 +574,12 @@ class Checkout extends Controller {
 			        	$paidAmount += $packagingCharges;
 	        		}
 
-	        		$paidAmount += $priceData->shipping;
+	        		//$paidAmount += $priceData->shipping;
+	        		if ($newShipping) {
+	        			$paidAmount += $priceData->shipping;
+	        		} else {
+	        			$paidAmount += $newShipping;
+	        		}
 	        		$paidAmount -= $priceData->discount;
 
 	        		$transactionId = uniqid();
