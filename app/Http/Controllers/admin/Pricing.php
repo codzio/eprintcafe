@@ -39,11 +39,36 @@ class Pricing extends Controller {
 			return redirect()->route('adminProduct');
 		}
 
+		$getSize = PricingModel::join('paper_size', 'pricing.paper_size_id', '=', 'paper_size.id')
+		->where('product_id', $productId)->select('pricing.paper_size_id', 'paper_size.*')->distinct()->get();
+
+		$getGsm = DB::table('gsm')
+			    ->distinct()
+			    ->select('gsm.gsm')
+			    ->whereIn('gsm.id', function ($query) {
+			        $query->select('pricing.paper_gsm_id')
+			              ->from('pricing')
+			              ->where('pricing.product_id', 16)
+			              ->distinct();
+			    })
+			    ->get();
+
+		$getPaperType = PricingModel::join('paper_type', 'pricing.paper_type_id', '=', 'paper_type.id')
+		->where('product_id', $productId)->select('pricing.paper_type_id', 'paper_type.*')->distinct()->get();
+
+		$getSide = PricingModel::where('product_id', $productId)->select('pricing.side')->distinct()->get();
+		$getColor = PricingModel::where('product_id', $productId)->select('pricing.color')->distinct()->get();
+
 		$data = array(
 			'title' => $getProduct->name.' Pricing',
 			'pageTitle' => $getProduct->name.' Pricing',
 			'menu' => 'pricing',
-			'product' => $getProduct
+			'product' => $getProduct,
+			'paperSize' => $getSize,
+			'gsm' => $getGsm,
+			'paperType' => $getPaperType,
+			'side' => $getSide,
+			'color' => $getColor,
 		);
 
 		return view('admin/pricing/index', $data);
@@ -84,6 +109,14 @@ class Pricing extends Controller {
 		    $columnSortOrder = !empty($order_arr)? $order_arr[0]['dir']:''; // asc or desc
 		    $searchValue = $search_arr['value']; // Search value
 
+		    $filters = [
+			    'pricing.paper_size_id' => $request->get('paperSize'),
+			    'gsm.gsm' => $request->get('gsm'),
+			    'pricing.paper_type_id' => $request->get('paperType'),
+			    'pricing.side' => $request->get('side'),
+			    'pricing.color' => $request->get('color')
+			];
+
 		     // Total records
 		    $totalRecords = PricingModel::
 		    join('paper_size', 'pricing.paper_size_id', '=', 'paper_size.id')
@@ -91,6 +124,13 @@ class Pricing extends Controller {
 		    ->join('paper_type', 'pricing.paper_type_id', '=', 'paper_type.id')
 		    ->where('product_id', $request->get('id'))
 		    ->select('count(*) as allcount');
+
+		    foreach ($filters as $column => $value) {
+			    if (!empty($value)) {
+			        $totalRecords->where($column, $value);
+			    }
+			}
+
 		    $totalRecords = $totalRecords->count();
 
 		    $totalRecordswithFilter = PricingModel::
@@ -99,6 +139,12 @@ class Pricing extends Controller {
 		    ->join('paper_type', 'pricing.paper_type_id', '=', 'paper_type.id')
 		    ->where('product_id', $request->get('id'))
 		    ->select('count(*) as allcount');
+
+		    foreach ($filters as $column => $value) {
+			    if (!empty($value)) {
+			        $totalRecordswithFilter->where($column, $value);
+			    }
+			}
 
 		    // if (!empty($searchValue)) {
 		    // 	$totalRecordswithFilter->where('admins.name', 'like', '%' .$searchValue . '%');
@@ -136,6 +182,12 @@ class Pricing extends Controller {
 		    ->where('product_id', $request->get('id'))
 		    ->select('pricing.*', 'paper_size.size', 'paper_size.measurement', 'gsm.gsm', 'gsm.weight', 'gsm.per_sheet_weight', 'gsm.paper_type_price', 'paper_type.paper_type')
 		    ->skip($start)->take($rowperpage);
+
+		    foreach ($filters as $column => $value) {
+			    if (!empty($value)) {
+			        $records->where($column, $value);
+			    }
+			}
 
 		    // if (!empty($searchValue)) {
 		    // 	$records->where('admins.name', 'like', '%' .$searchValue . '%');

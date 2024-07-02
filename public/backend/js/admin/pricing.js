@@ -27,7 +27,12 @@ var table = $('#kt_file_manager_list').DataTable({
     "ajax": {
         'url': dataUrl,
         'data': {
-            id: productId
+            id: productId,
+            paperSize: $("#paperSize").find(':selected').val(),
+            gsm: $("#gsm").find(':selected').val(),
+            paperType: $("#paperType").find(':selected').val(),
+            side: $("#side").find(':selected').val(),
+            color: $("#color").find(':selected').val(),
         }
     },
     "pageLength": 10,

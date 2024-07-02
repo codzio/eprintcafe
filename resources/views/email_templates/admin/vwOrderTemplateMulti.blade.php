@@ -352,6 +352,10 @@
                                     <td style="padding-right: 5px;padding-left: 5px;border-bottom: 1px solid gray;"><b>{{ ($order->paid_amount+$order->additional_discount)-$gstCalc->igst }}</b></td>
                                 </tr>
                                 <tr>
+                                    <td style="padding-right: 30px;padding-left: 5px;border-left: 1px solid gray; font-weight: 800;">Packaging Charges</td>
+                                    <td style="padding-right: 5px;padding-left: 5px;">{{ $order->packaging_charges }}</td>
+                                </tr>
+                                <tr>
                                     <td style="padding-right: 30px;padding-left: 5px;border-left: 1px solid gray;border-bottom: 1px solid gray;"><b>G.Total</b></td>
                                     <td style="padding-right: 5px;padding-left: 5px;border-bottom: 1px solid gray;"><b>{{ $order->paid_amount }}</b></td>
                                 </tr>

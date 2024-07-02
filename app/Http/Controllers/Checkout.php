@@ -444,16 +444,18 @@ class Checkout extends Controller {
 	        			$shipping = $isPincodeExist->from2000_3000gm;
 	        		}
 
+	        		$newShipping = $shipping;
+
 	        		//check if coupon session exist
 	        		if (!empty($couponSess)) {
-	        			//check coupon for
-	        			if ($couponSess['coupon_for'] == 'shipping') {
-	        				
-	        				$getCoupon = CouponModel::where(['id' => $couponSess['coupon_id'], 'is_active' => 1])->first();
 
-	        				if (!empty($getCoupon)) {
+	        			$getCoupon = CouponModel::where(['id' => $couponSess['coupon_id'], 'is_active' => 1])->first();
 
-	        					//check coupon usage
+	        			if (!empty($getCoupon)) {
+	        					
+	        				if ($getCoupon->coupon_for == 'shipping') {
+
+		        				//check coupon usage
 			                	$getCouponUsage = $getCoupon->coupon_usage;
 
 			                	//Min Cart Amount
@@ -487,26 +489,36 @@ class Checkout extends Controller {
 	                				}
 	                			}
 
-	                			$newShipping = $shipping;
 	                			//check shipping charge
 	                			if ($discount >= $shipping) {
 	                				$newShipping = 0;
 	                				$discount = 0;
+	                			} else {
+	                				$deliveryCharges = $newShipping-$discount;
 	                			}
 
 	                			$shippingSessObj = [
 				        			'pincode' => $request->post('shippingPincode'),
-				        			'shipping' => $discount
+				        			// 'shipping' => $discount
+				        			'shipping' => $deliveryCharges
 				        		];
 
 				        		$request->session()->put('shippingSess', $shippingSessObj);
 
-	        				}
+		        			} else {
+
+		        				$shippingSessObj = [
+				        			'pincode' => $request->post('shippingPincode'),
+				        			'shipping' => $shipping
+				        		];
+
+				        		$request->session()->put('shippingSess', $shippingSessObj);
+
+		        			}
 
 	        			}
-	        		} else {
 
-	        			$newShipping = $shipping;
+	        		} else {
 
 	        			$shippingSessObj = [
 		        			'pincode' => $request->post('shippingPincode'),
@@ -578,7 +590,8 @@ class Checkout extends Controller {
 	        		if ($newShipping) {
 	        			$paidAmount += $priceData->shipping;
 	        		} else {
-	        			$paidAmount += $newShipping;
+	        			//$paidAmount += $newShipping;
+	        			$paidAmount += $deliveryCharges;
 	        		}
 	        		$paidAmount -= $priceData->discount;
 
