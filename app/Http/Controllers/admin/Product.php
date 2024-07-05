@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cookie;
 
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+
 use App\Models\ProductModel;
 use App\Models\PricingModel;
 use App\Models\CategoryModel;
@@ -36,6 +40,89 @@ class Product extends Controller {
 		);
 
 		return view('admin/product/index', $data);
+
+	}
+
+	public function bulkUpdate(Request $request) {
+
+		if (!can('read', 'product')){
+			return redirect(route('adminDashboard'));
+		}
+
+		//check if is there any request for download sample file
+		if ($request->get('action') == 'export') {
+			
+			$selectedProduct = $request->get('product');
+
+			$pricingQuery = PricingModel::
+			select('product.name as product_name', 'paper_size.size', 'gsm.gsm', 'paper_type.paper_type', 'pricing.*')
+			->join('product', 'pricing.product_id', '=', 'product.id')
+		    ->join('paper_size', 'pricing.paper_size_id', '=', 'paper_size.id')
+		    ->join('gsm', 'pricing.paper_gsm_id', '=', 'gsm.id')
+		    ->join('paper_type', 'pricing.paper_type_id', '=', 'paper_type.id');
+
+		    if ($selectedProduct != 'all') {
+		    	$pricingQuery = $pricingQuery->where('product_id', $selectedProduct);
+		    }
+
+		    $getFilterProduct = $pricingQuery->get();
+
+		    if (!empty($getFilterProduct) && $getFilterProduct->count()) {
+
+		    	// echo "<pre>";
+		    	// print_r($getFilterProduct->toArray());
+		    	// die();
+
+		    	$spreadsheet = new Spreadsheet();
+                $sheet = $spreadsheet->getActiveSheet();
+
+                // Set the header row
+                $sheet->setCellValue('A1', 'Product');
+                $sheet->setCellValue('B1', 'Paper Size');
+                $sheet->setCellValue('C1', 'Paper GSM');
+                $sheet->setCellValue('D1', 'Paper Type');
+                $sheet->setCellValue('E1', 'Print Side');
+                $sheet->setCellValue('F1', 'Color');
+                $sheet->setCellValue('G1', 'Price');
+
+                $row = 2;
+                foreach ($getFilterProduct as $item) {
+                    $sheet->setCellValue('A' . $row, $item->product_name);
+                    $sheet->setCellValue('B' . $row, $item->size);
+                    $sheet->setCellValue('C' . $row, $item->gsm);
+                    $sheet->setCellValue('D' . $row, $item->paper_type);
+                    $sheet->setCellValue('E' . $row, $item->side);
+                    $sheet->setCellValue('F' . $row, $item->color);
+                    $sheet->setCellValue('G' . $row, $item->other_price);
+                    $row++;
+                }
+
+                $fileName = 'pricing-data-' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+                $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
+                header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                header('Content-Disposition: attachment; filename="' . $fileName . '"');
+                header('Cache-Control: max-age=0');
+                $writer->save('php://output');
+                exit;
+
+		    } else {
+
+		    	$request->session()->flash('status', array('error' => true, 'msg' => 'There are no records found.'));
+		    	return redirect(route('adminProductBulkUpdate'));
+		    }
+
+		}
+
+		$productList = ProductModel::where('is_active', 1)->orderBy('name')->get();
+
+		$data = array(
+			'title' => 'Bulk Product Update',
+			'pageTitle' => 'Bulk Product Update',
+			'menu' => 'product',
+			'productList' => $productList
+		);
+
+		return view('admin/product/bulkUpdateProduct', $data);
 
 	}
 
@@ -240,7 +327,6 @@ class Product extends Controller {
 
 		return view('admin/product/add', $data);
 	}
-
 	
 	public function edit($id) {
 
@@ -508,6 +594,165 @@ class Product extends Controller {
 
 		echo json_encode($this->status);
 	}
+
+	public function doUpdateProductPricing(Request $request) {
+
+		if ($request->ajax()) {
+
+			if (!can('update', 'product')){
+				
+				$this->status = array(
+					'error' => true,
+					'eType' => 'final',
+					'msg' => 'Permission Denied.'
+				);
+
+				return json_encode($this->status);
+			}
+
+			$validator = Validator::make($request->all(), [
+	            'file' => 'required|mimes:xlsx,xls,application/excel,application/vnd.ms-excel,application/vnd.msexcel|max:50000',
+	        ]);
+
+	        if ($validator->fails()) {
+	            
+	            $errors = $validator->errors()->getMessages();
+
+	            $this->status = array(
+					'error' => true,
+					'eType' => 'field',
+					'errors' => $errors,
+					'msg' => 'Validation failed'
+				);
+
+	        } else {
+
+	        	$file = $request->file('file');
+
+	        	if ($request->file('file')->isValid()) {
+		            $spreadsheet = IOFactory::load($file);
+		            $sheetData = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
+
+		            $validationErrors = $this->validateSheetData($sheetData);
+
+		            if (!empty($validationErrors)) {
+		                
+		                $this->status = array(
+		                	'error' => true,
+							'eType' => 'field',
+							'errors' => ['file' => $validationErrors],
+							'msg' => 'Something went wrong.'
+						);
+
+		            } else {
+
+		            	for ($i=2; $i <= count($sheetData); $i++) {
+		            		
+		            		PricingModel::
+						    join('product', 'pricing.product_id', '=', 'product.id')
+						    ->join('paper_size', 'pricing.paper_size_id', '=', 'paper_size.id')
+						    ->join('gsm', 'pricing.paper_gsm_id', '=', 'gsm.id')
+						    ->join('paper_type', 'pricing.paper_type_id', '=', 'paper_type.id')
+						    ->where([
+						        ['product.name', '=', $sheetData[$i]['A']],
+						        ['paper_size.size', '=', $sheetData[$i]['B']],
+						        ['gsm.gsm', '=', $sheetData[$i]['C']],
+						        ['paper_type.paper_type', '=', $sheetData[$i]['D']],
+						        ['pricing.side', '=', $sheetData[$i]['E']],
+						        ['pricing.color', '=', $sheetData[$i]['F']]
+						    ])->update(['pricing.other_price' => $sheetData[$i]['G']]);
+
+		            	}
+
+		            	$this->status = array(
+							'error' => false,								
+							'msg' => 'The product pricing has been updated successfully.'
+						);
+
+		            }
+		    
+		        } else {
+		            $this->status = array(
+						'error' => true,
+						'eType' => 'final',
+						'msg' => 'Invalid File.'
+					);
+		        }
+
+	        }
+
+		} else {
+			$this->status = array(
+				'error' => true,
+				'eType' => 'final',
+				'msg' => 'Something went wrong'
+			);
+		}
+
+		echo json_encode($this->status);
+	}
+
+	private function validateSheetData($sheetData){
+	        $validationErrors = '';
+
+	        $line=1;	        
+	        for ($i=2; $i <= count($sheetData); $i++) { 
+	        	
+	        	if (!isset($sheetData[$i]['A']) OR empty($sheetData[$i]['A'])) {
+	        		$validationErrors .= '<p>The product name is required on line no. '.$line.'</p>';
+	        	}
+
+	        	if (!isset($sheetData[$i]['B']) OR empty($sheetData[$i]['B'])) {
+	        		$validationErrors .= '<p>The paper size is required on line no. '.$line.'</p>';
+	        	}      	
+
+	        	if (!isset($sheetData[$i]['C']) OR empty($sheetData[$i]['C'])) {
+	        		$validationErrors .= '<p>The paper gsm is required on line no. '.$line.'</p>';
+	        	}
+
+	        	if (!isset($sheetData[$i]['D']) OR empty($sheetData[$i]['D'])) {
+	        		$validationErrors .= '<p>The paper type is required on line no. '.$line.'</p>';
+	        	}
+
+	        	if (!isset($sheetData[$i]['E']) OR empty($sheetData[$i]['E'])) {
+	        		$validationErrors .= '<p>The print side is required on line no. '.$line.'</p>';
+	        	}
+
+	        	if (!isset($sheetData[$i]['F']) OR empty($sheetData[$i]['F'])) {
+	        		$validationErrors .= '<p>The color is required on line no. '.$line.'</p>';
+	        	}
+
+	        	if (!isset($sheetData[$i]['G']) OR empty($sheetData[$i]['G'])) {
+	        		$validationErrors .= '<p>The price is required on line no. '.$line.'</p>';
+	        	} elseif (!is_numeric($sheetData[$i]['G'])) {
+	        		$validationErrors .= '<p>The price must be numeric on line no. '.$line.'</p>';
+	        	}
+
+	        	$pricingCount = PricingModel::
+			    join('product', 'pricing.product_id', '=', 'product.id')
+			    ->join('paper_size', 'pricing.paper_size_id', '=', 'paper_size.id')
+			    ->join('gsm', 'pricing.paper_gsm_id', '=', 'gsm.id')
+			    ->join('paper_type', 'pricing.paper_type_id', '=', 'paper_type.id')
+			    ->where([
+			        ['product.name', '=', $sheetData[$i]['A']],
+			        ['paper_size.size', '=', $sheetData[$i]['B']],
+			        ['gsm.gsm', '=', $sheetData[$i]['C']],
+			        ['paper_type.paper_type', '=', $sheetData[$i]['D']],
+			        ['pricing.side', '=', $sheetData[$i]['E']],
+			        ['pricing.color', '=', $sheetData[$i]['F']]
+			    ])->count();
+
+			    if (!$pricingCount) {
+			    	$validationErrors .= '<p>The product is not matched on line no. '.$line.'</p>';
+			    }
+
+	        	$line++;
+
+	        }
+
+	        return $validationErrors;
+
+    }
 
 
 	public function doDelete(Request $request) {

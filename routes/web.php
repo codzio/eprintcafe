@@ -420,6 +420,8 @@ Route::prefix(config('admin.path'))->middleware('web')->group(function () {
         //Product
         Route::prefix('product')->group(function() {
             Route::get('/', [Product::class, 'index'])->name('adminProduct');
+            Route::get('/bulk-update', [Product::class, 'bulkUpdate'])->name('adminProductBulkUpdate');
+            Route::post('/doUpdateProductPricing', [Product::class, 'doUpdateProductPricing'])->name('adminDoUpdateProductPricing');
             Route::get('/get', [Product::class, 'get'])->name('getAdminProduct');
 
             Route::get('/add', [Product::class, 'add'])->name('adminAddProduct');

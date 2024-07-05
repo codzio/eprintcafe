@@ -172,6 +172,15 @@ data-kt-drawer="true" data-kt-drawer-name="app-sidebar" data-kt-drawer-activate=
                             </a>
                             @endcan
 
+                            @can('read', 'product')
+                            <a class="menu-link"  href="{{ route('adminProductBulkUpdate') }}" >
+                                <span  class="menu-bullet" >
+                                    <span class="bullet bullet-dot"></span>
+                                </span>
+                                <span  class="menu-title">Bulk Update</span>
+                            </a>
+                            @endcan
+
                         </div>
                     </div>
                 </div>
