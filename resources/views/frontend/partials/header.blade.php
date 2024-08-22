@@ -228,6 +228,9 @@
               <li class="{{ $menu == 'login'? 'active':''; }}"> <a href="{{ route('loginPage') }}"> Login</a> </li>
               <li class="{{ $menu == 'register'? 'active':''; }}"> <a href="{{ route('registerPage') }}"> Register</a> </li>
               @endif
+
+              <li class="{{ $menu == 'track-orders'? 'active':''; }}"> <a href="{{ route('trackOrdersPage') }}">Track Order</a> </li>
+
             </ul>
           </div>  
 

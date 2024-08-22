@@ -45,6 +45,20 @@
                                @endif
                            </tr>
                            <tr>
+                               <th>Pickup Option</th>
+                               <td>
+                                    <div style="display:flex;">
+                                        <select id="changePickupOption" class="form-control" style="width: 18%; margin-top: 10px;">
+                                            <option value="">Select Pickup Option</option>
+                                            <option {{ $order->pickup_option == 'pickup'? 'selected':''; }} value="pickup">Pickup</option>
+                                            <option {{ $order->pickup_option == 'delivery'? 'selected':''; }} value="delivery">Delivery</option>
+                                        </select>
+
+                                        <button type="button" data-id="{{ $order->id }}" data-url="{{ route('adminUpdatePickupOption') }}" id="changePickupOptionBtn" style="margin-left:10px" class="mt-4 btn btn-primary btn-sm">Update Pickup Option</button>
+                                    </div>
+                               </td>
+                           </tr>
+                           <tr>
                                <th>Order Status</th>
                                <td>
                                    @if($order->order_status == 'Confirm')
@@ -53,6 +67,8 @@
                                    <div class="badge badge-warning">Production</div>
                                    @elseif($order->order_status == 'Dispatch')
                                    <div class="badge badge-success">Dispatch</div>
+                                   @elseif($order->order_status == 'Hold')
+                                   <div class="badge badge-warning">Hold</div>
                                    @else
                                    <div class="badge badge-danger">Cancel</div>
                                    @endif
@@ -62,11 +78,17 @@
                                         
                                         <select id="changeOrderStatus" class="form-control" style="width: 18%; margin-top: 10px;">
                                            <option value="">Select Status</option>
-                                            @if($order->order_status == 'Confirm')
+                                            @if($order->order_status == 'Confirm' || $order->order_status == 'Hold')
+                                               
+                                               @if($order->order_status != 'Hold')
+                                                <option value="Hold">Hold</option>
+                                               @endif
+
                                                <option value="Production">Production</option>
                                                <option value="Dispatch">Dispatch</option>
                                                <option value="Cancel">Cancel</option>
                                             @elseif($order->order_status == 'Production')
+                                                <option value="Hold">Hold</option>
                                                 <option value="Dispatch">Dispatch</option>
                                                 <option value="Cancel">Cancel</option>
                                             @endif
@@ -391,6 +413,6 @@
         }
 
     </script>
-    <script src="{{ asset('public/backend/js/admin/order.js?v=1') }}"></script>
+    <script src="{{ asset('public/backend/js/admin/order.js?v=3') }}"></script>
 
 @endsection

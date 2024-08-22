@@ -596,7 +596,7 @@
       }, success: function(res) {
           
           // calculatePrice();
-          $("#sides").html(res.paperSides);
+          $("#paperSides").html(res.paperSides);
 
       }
     })
@@ -717,6 +717,8 @@
 
     totalPrice = parseFloat(paperGsmPrice)+parseFloat(paperTypePrice)+parseFloat(paperSidesPrice)+parseFloat(paperColorPrice);
 
+    console.log(totalPrice, paperGsmPrice, paperTypePrice, paperSidesPrice, paperColorPrice, 'aaa');
+
     // if(paperSidesPrice != 0 && paperColorPrice != 0) {
     //   totalPrice = parseFloat(totalPrice) - parseFloat(paperSidesPrice);
     // }
@@ -779,7 +781,7 @@
     $("#printingCostRes").html(`(${totalPrice} * ${qty}) * ${noOfCopies}`);
 
     $("#laminationCostRes").html(parseFloat(laminationPrice));
-    $("#totalCostRes").html(finalPrice*noOfCopies);
+    $("#totalCostRes").html((finalPrice*noOfCopies).toFixed(2));
 
     $("#result").show();
     $(el).html('CALCULATE PRICE');

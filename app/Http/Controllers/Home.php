@@ -65,6 +65,18 @@ class Home extends Controller {
 
 	}
 
+	public function trackOrders(Request $request) {
+		
+		$data = array(
+			'title' => 'Track Order',
+			'pageTitle' => 'Track Order',
+			'menu' => 'track-orders',
+		);
+
+		return view('frontend/trackOrders', $data);
+
+	}
+
 	public function about(Request $request) {
 
 		$data = array(
@@ -1565,5 +1577,93 @@ class Home extends Controller {
 
         return view('payu',compact('action','hash','MERCHANT_KEY','txnid','successURL','failURL','name','email','amount'));
 
+	}
+
+	public function doTrackOrder(Request $request) {
+		
+		if ($request->ajax()) {
+
+			$validator = Validator::make($request->post(), [
+			    'orderId' => 'required',
+			]);
+
+	        if ($validator->fails()) {
+	            
+	            $errors = $validator->errors()->getMessages();
+
+	            $this->status = array(
+					'error' => true,
+					'eType' => 'field',
+					'errors' => $errors,
+					'msg' => 'Validation failed'
+				);
+
+	        } else {
+
+	        	$orderId = $request->post('orderId');
+	        	$getOrder = OrderModel::where('order_id', $orderId)->first();
+
+	        	if (!empty($getOrder)) {
+	        		
+	        		$orderStatus = $getOrder->order_status;
+
+	        		switch ($orderStatus) {
+	        			case 'Confirm':
+	        				$orderStatusMsg = "Your order has been confirmed.";
+	        				$color = "#008000";
+	        				break;
+
+	        			case 'Production':
+	        				$orderStatusMsg = "Your order is currently being processed.";
+	        				$color = "#8B8000";
+	        				break;
+
+	        			case 'Dispatch':
+	        				$orderStatusMsg = "Your order has been shipped.";
+	        				$color = "#0000FF";
+	        				break;
+
+	        			case 'Cancel':
+	        				$orderStatusMsg = "Your order has been cancelled.";
+	        				$color = "#FF0000";
+	        				break;
+
+	        			case 'Hold':
+	        				$orderStatusMsg = "Your order is currently on hold.";
+	        				$color = "#FFA500";
+	        				break;
+	        			
+	        			default:
+	        				$orderStatusMsg = "Your order has been confirmed.";
+	        				$color = "#008000";
+	        				break;
+	        		}
+
+	        		$this->status = array(
+						'error' => false,
+						'msg' => $orderStatusMsg,
+						'color' => $color,
+					);
+
+	        	} else {
+					$this->status = array(
+						'error' => true,
+						'eType' => 'final',
+						'msg' => 'The order is not exist.'
+					);
+	        	}
+
+	        }
+
+		} else {
+			$this->status = array(
+				'error' => true,
+				'eType' => 'final',
+				'msg' => 'Something went wrong'
+			);
+		}
+
+		return response($this->status);
+		
 	}
 }

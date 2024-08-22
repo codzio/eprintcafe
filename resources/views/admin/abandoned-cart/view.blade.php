@@ -115,6 +115,6 @@
     <script type="text/javascript">
         dataUrl = '{{ route("getAdminOrders") }}';
     </script>
-    <script src="{{ asset('public/backend/js/admin/order.js?v=2') }}"></script>
+    <script src="{{ asset('public/backend/js/admin/order.js?v=3') }}"></script>
 
 @endsection

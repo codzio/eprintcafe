@@ -19,8 +19,8 @@
 <link href="{{ asset('public/frontend') }}/css/font-awesome.min.css" rel="stylesheet" type="text/css">
 <link href="{{ asset('public/frontend') }}/css/ionicons.min.css" rel="stylesheet">
 <link href="{{ asset('public/frontend') }}/css/main.css" rel="stylesheet">
-<link href="{{ asset('public/frontend') }}/css/style.css?v=3" rel="stylesheet">
-<link href="{{ asset('public/frontend') }}/css/responsive.css?v=3" rel="stylesheet">
+<link href="{{ asset('public/frontend') }}/css/style.css?v=4" rel="stylesheet">
+<link href="{{ asset('public/frontend') }}/css/responsive.css?v=4" rel="stylesheet">
 
 <!-- JavaScripts -->
 <script src="{{ asset('public/frontend') }}/js/modernizr.js"></script>

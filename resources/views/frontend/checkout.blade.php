@@ -449,7 +449,6 @@
 
                     <li>
                       <div class="courier-checkbox checkbox-design" id="checkbox-style">
-                        
                         <div class="checkbox-div">
                           <label for="courier-dtdc">DTDC</label>
                           <input class="courier-option" onchange="updateCourier(this)" style="" name="courier" value="DTDC" id="courier-dtdc" class="styled" type="checkbox" checked>
@@ -458,10 +457,19 @@
                           <label for="sbi">India Post</label>
                           <input class="courier-option" onchange="updateCourier(this)" style="" name="courier" value="India Post" id="courier-ip" class="styled" type="checkbox">
                         </div>
+                      </div>
+                    </li>
 
-                        <!-- <input style="width:20px" name="courier" value="India Post" id="courier-india-post" class="styled" type="checkbox"> -->
-                        <!-- <label for="checkbox3-4">DTDC</label> -->
-
+                    <li style="margin-top:10px">
+                      <div class="courier-checkbox checkbox-design" id="checkbox-style">
+                        <div class="checkbox-div">
+                          <label for="courier-dtdc">Phonepe</label>
+                          <input class="paymentMethod-option" onchange="updatePaymentMethod(this)" name="paymentMethod" value="phonepe" id="phonepe" class="styled" type="checkbox" checked>
+                        </div>
+                        <div class="checkbox-div">
+                          <label for="sbi">Payu</label>
+                          <input class="paymentMethod-option" onchange="updatePaymentMethod(this)" name="paymentMethod" value="payu" id="payu" class="styled" type="checkbox">
+                        </div>
                       </div>
                     </li>
 
@@ -501,6 +509,17 @@
     } else {
       $("#courier-dtdc").prop('checked', true);
       $("#courier-ip").prop('checked', false);
+    }
+  }
+
+  function updatePaymentMethod(el) {
+    getVal = $(el).val();
+    if(getVal == 'phonepe') {
+      $("#payu").prop('checked', false);
+      $("#phonepe").prop('checked', true);
+    } else {
+      $("#payu").prop('checked', true);
+      $("#phonepe").prop('checked', false);
     }
   }
 
@@ -613,8 +632,9 @@
       remark = $("#remark").val();
       wetransferLink = $("#wetransferLink").val();
       courier = $(".courier-option:checkbox:checked").val();
+      paymentMethod = $(".paymentMethod-option:checkbox:checked").val();
 
-      formData = $("#customerAddressForm").serialize()+"&acceptTermsCondition="+acceptTerms+"&remark="+remark+"&wetransferLink="+wetransferLink+"&courier="+courier;
+      formData = $("#customerAddressForm").serialize()+"&acceptTermsCondition="+acceptTerms+"&remark="+remark+"&wetransferLink="+wetransferLink+"&courier="+courier+"&paymentMethod="+paymentMethod;
 
       url = "{{ route('placeOrder') }}"
 

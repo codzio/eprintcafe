@@ -459,6 +459,48 @@ $("#changeOrderStatusBtn").click(function(event) {
 
 });
 
+$("#changePickupOptionBtn").click(function(event) {
+    
+    url = $(this).attr('data-url');
+    id = $(this).attr('data-id');
+    pickupOption = $("#changePickupOption").find(':selected').val();
+
+    if (pickupOption == '') {
+        toastr.error('Please select an pickup option');
+        return false;
+    }
+
+    $.ajax({
+        url: url,
+        type: 'POST',
+        dataType: 'JSON',
+        data: {id: id, pickupOption: pickupOption},
+        beforeSend: function() {
+            $("#changePickupOptionBtn").html('Updating...<i class="fa fa-spinner fa-spin"></i>')
+        },
+        success: function(res) {
+            if (res.error == true) {
+                if (res.eType == 'field') {
+                    $.each(res.errors, function(index, val) {
+                        $("#"+index+"Err").html(val);
+                    });
+                } else {
+                    toastr.error(res.msg);
+                }
+            } else {
+                toastr.success(res.msg);
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+            }
+
+            $("#changePickupOptionBtn").html('Update Pickup Option')
+
+        }
+    });
+
+});
+
 const moveToOrders = (el) => {
     const userId = $(el).data('user');
     const url = $(el).data('action');

@@ -95,6 +95,6 @@
     </script>
 
     <script src="{{ asset('public/backend') }}/plugins/custom/datatables/datatables.bundle.js"></script>
-    <script src="{{ asset('public/backend/js/admin/order.js?v=1') }}"></script>
+    <script src="{{ asset('public/backend/js/admin/order.js?v=3') }}"></script>
 
 @endsection

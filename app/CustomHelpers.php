@@ -2823,6 +2823,7 @@ function amountToWords($amount) {
     ];
 
     $teens = [
+    	'Ten',
         'Eleven',
         'Twelve',
         'Thirteen',
@@ -2885,7 +2886,11 @@ function amountToWords($amount) {
         if ($amount < 10) {
             $output .= $words[$amount];
         } elseif ($amount < 20) {
-            $output .= $teens[$amount - 11];
+        	if (isset($teens[$amount - 11])) {
+        		$output .= $teens[$amount - 11];
+        	} else {
+        		$output .= $teens[0];
+        	}
         } else {
             $output .= $tens[floor($amount / 10)];
             $remainder = $amount % 10;

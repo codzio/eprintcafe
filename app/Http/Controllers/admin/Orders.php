@@ -279,6 +279,10 @@ class Orders extends Controller {
 							$orderStatus = '<div class="badge badge-success">Dispatch</div>';
 							break;
 
+						case 'Hold':
+							$orderStatus = '<div class="badge badge-warning">Hold</div>';
+							break;
+
 						case 'Cancel':
 							$orderStatus = '<div class="badge badge-danger">Cancel</div>';
 							break;
@@ -501,6 +505,10 @@ class Orders extends Controller {
 
 						case 'Dispatch':
 							$orderStatus = '<div class="badge badge-success">Dispatch</div>';
+							break;
+
+						case 'Hold':
+							$orderStatus = '<div class="badge badge-warning">Hold</div>';
 							break;
 
 						case 'Cancel':
@@ -1025,10 +1033,19 @@ class Orders extends Controller {
         				'order_status' => $orderStatus
         			);
 
-        			if ($orderStatus == 'Dispatch') {
+        			if ($orderStatus == 'Dispatch' && $isExist->pickup_option == 'delivery') {
         				
         				//get barcode
         				$barcode = BarcodeModel::where(['is_active' => 1, 'is_used' => 0])->first();
+
+        				if (empty($barcode)) {
+        					return response()->json([
+        						'error' => true,
+								'eType' => 'final',
+								'msg' => 'Please add the barcode.'
+        					]);
+        				}
+        				
         				$obj['shipping_label_number'] = $barcode->barcode;
 
         			}
@@ -1037,7 +1054,7 @@ class Orders extends Controller {
 
         			if ($isUpdated) {
         				
-        				if ($orderStatus == 'Dispatch') {
+        				if ($orderStatus == 'Dispatch' && $isExist->pickup_option == 'delivery') {
 	        				BarcodeModel::where('id', $barcode->id)->update(['is_used' => 1]);
 						}
 
@@ -1061,6 +1078,65 @@ class Orders extends Controller {
 						'msg' => 'Shipping label already updated.'
 					);
         		}
+
+        	} else {
+        		$this->status = array(
+					'error' => true,
+					'eType' => 'final',
+					'msg' => 'The order is not exist.'
+				);
+        	}
+
+		} else {
+			$this->status = array(
+				'error' => true,
+				'eType' => 'final',
+				'msg' => 'Something went wrong'
+			);
+		}
+
+		echo json_encode($this->status);
+	}
+
+	public function doUpdatePickupOption(Request $request) {
+		if ($request->ajax()) {
+
+			if (!can('create', 'orders')){
+				
+				$this->status = array(
+					'error' => true,
+					'eType' => 'final',
+					'msg' => 'Permission Denied.'
+				);
+
+				return json_encode($this->status);
+
+			}
+
+	        $isExist = OrderModel::where(['id' => $request->post('id')])->first();
+
+        	if ($isExist && $isExist->count()) {
+
+        		$obj = array(
+    				'pickup_option' => $request->post('pickupOption')
+    			);        		
+
+    			$isUpdated = OrderModel::where(['id' => $request->post('id')])->update($obj);
+
+    			if ($isUpdated) {
+
+					$this->status = array(
+						'error' => false,								
+						'msg' => 'The pickup option has been updated successfully.'
+					);
+
+    			} else {
+					$this->status = array(
+						'error' => true,
+						'eType' => 'final',
+						'msg' => 'Something went wrong.'
+					);
+    			}
 
         	} else {
         		$this->status = array(
@@ -1946,7 +2022,7 @@ class Orders extends Controller {
 	        			$packagingCharges = 0;
 		        		$paidAmount = $priceData->total;
 		        		if (setting('packaging_charges')) {
-				    		$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+				    		$packagingCharges = round(($paidAmount*setting('packaging_charges'))/100,2);
 			    			$paidAmount += $packagingCharges;
 			    		}
 
@@ -2002,7 +2078,7 @@ class Orders extends Controller {
 			        		$packagingCharges = 0;
 			        		$paidAmount = $priceData->total;
 			        		if (setting('packaging_charges')) {
-					    		$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+					    		$packagingCharges = round(($paidAmount*setting('packaging_charges'))/100,2);
 				    			$paidAmount += $packagingCharges;
 				    		}
 
@@ -2135,7 +2211,7 @@ class Orders extends Controller {
 			        	$packagingCharges = 0;
 
 			        	if (setting('packaging_charges')) {
-			        		$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+			        		$packagingCharges = round(($paidAmount*setting('packaging_charges'))/100,2);
 			        		$paidAmount += $packagingCharges;
 			        	}
 
@@ -2512,9 +2588,20 @@ class Orders extends Controller {
 
 			        		//check free shipping
 			        		if (!$isShippingFree) {
-			        			if ($isPincodeExist->free_shipping && ($totalAmount >= $isPincodeExist->free_shipping)) {
-				        			$shipping = 0;
-				        		} elseif ($totalWeightInGm <= 500) {
+			        			// if ($isPincodeExist->free_shipping && ($totalAmount >= $isPincodeExist->free_shipping)) {
+				        		// 	$shipping = 0;
+				        		// } elseif ($totalWeightInGm <= 500) {
+				        		// 	$shipping = $isPincodeExist->under_500gm;
+				        		// } elseif ($totalWeightInGm <= 1000) {
+				        		// 	$shipping = $isPincodeExist->from500_1000gm;
+				        		// } elseif ($totalWeightInGm <= 2000) {
+				        		// 	$shipping = $isPincodeExist->from1000_2000gm;
+				        		// } elseif ($totalWeightInGm <= 3000) {
+				        		// 	$shipping = $isPincodeExist->from2000_3000gm;
+				        		// } else {
+				        		// 	$shipping = $isPincodeExist->from2000_3000gm;
+				        		// }
+				        		if ($totalWeightInGm <= 500) {
 				        			$shipping = $isPincodeExist->under_500gm;
 				        		} elseif ($totalWeightInGm <= 1000) {
 				        			$shipping = $isPincodeExist->from500_1000gm;
@@ -2552,7 +2639,7 @@ class Orders extends Controller {
 				        		$newPaidAmount = ($priceData->subTotal+$shipping);
 
 				        		if (setting('packaging_charges')) {
-						    		$packagingCharges = ($newPaidAmount*setting('packaging_charges'))/100;
+						    		$packagingCharges = round(($newPaidAmount*setting('packaging_charges'))/100,2);
 					    			$newPaidAmount += $packagingCharges;
 					    		}
 
@@ -2648,9 +2735,20 @@ class Orders extends Controller {
 
 					        		//check free shipping
 					        		if (!$isShippingFree) {
-					        			if ($isPincodeExist->free_shipping && ($totalAmount >= $isPincodeExist->free_shipping)) {
-						        			$shipping = 0;
-						        		} elseif ($totalWeightInGm <= 500) {
+					        			// if ($isPincodeExist->free_shipping && ($totalAmount >= $isPincodeExist->free_shipping)) {
+						        		// 	$shipping = 0;
+						        		// } elseif ($totalWeightInGm <= 500) {
+						        		// 	$shipping = $isPincodeExist->under_500gm;
+						        		// } elseif ($totalWeightInGm <= 1000) {
+						        		// 	$shipping = $isPincodeExist->from500_1000gm;
+						        		// } elseif ($totalWeightInGm <= 2000) {
+						        		// 	$shipping = $isPincodeExist->from1000_2000gm;
+						        		// } elseif ($totalWeightInGm <= 3000) {
+						        		// 	$shipping = $isPincodeExist->from2000_3000gm;
+						        		// } else {
+						        		// 	$shipping = $isPincodeExist->from2000_3000gm;
+						        		// }
+						        		if ($totalWeightInGm <= 500) {
 						        			$shipping = $isPincodeExist->under_500gm;
 						        		} elseif ($totalWeightInGm <= 1000) {
 						        			$shipping = $isPincodeExist->from500_1000gm;
@@ -2667,7 +2765,7 @@ class Orders extends Controller {
 						        	$packagingCharges = 0;
 
 						        	if (setting('packaging_charges')) {
-						        		$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+						        		$packagingCharges = round(($paidAmount*setting('packaging_charges'))/100,2);
 						        		$paidAmount += $packagingCharges;
 						        	}
 
@@ -2804,7 +2902,7 @@ class Orders extends Controller {
 					        	$packagingCharges = 0;
 
 					        	if (setting('packaging_charges')) {
-					        		$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+					        		$packagingCharges = round(($paidAmount*setting('packaging_charges'))/100,2);
 					        		$paidAmount += $packagingCharges;
 					        	}
 

@@ -27,6 +27,7 @@ use App\Models\CartModel;
 use App\Models\CouponModel;
 use App\Models\CustomerAddressModel;
 use App\Models\OrderModel;
+use App\Models\OrderItemModel;
 use App\Models\CustomerModel;
 use App\Models\BarcodeModel;
 
@@ -251,6 +252,15 @@ class Checkout extends Controller {
 	        			$shipping = $isPincodeExist->from2000_3000gm;
 	        		}
 
+	        		//Start free shipping till 31Aug
+	        		$dateToCompare = strtotime('31-Aug-2024');
+					$currentDate = strtotime(date('Y-m-d'));
+
+					if ($currentDate <= $dateToCompare) {
+						$shipping = 0;
+					}
+					//End free shipping till 31Aug
+
 	        		$shippingSessObj = [
 	        			'pincode' => $request->post('shippingPincode'),
 	        			'shipping' => $shipping
@@ -333,6 +343,7 @@ class Checkout extends Controller {
 	            'remark' => 'sometimes|nullable',
 	            'wetransferLink' => 'sometimes|nullable',
 	            'courier' => 'required|in:DTDC,India Post',
+	            'paymentMethod' => 'required|in:phonepe,payu'
 	        ];
 
 	        $isBillingAddrSame = $request->post('isBillingAddressSame');
@@ -507,6 +518,17 @@ class Checkout extends Controller {
 
 		        			} else {
 
+		        				$deliveryCharges = $shipping;
+
+		        				//Start free shipping till 31Aug
+				        		$dateToCompare = strtotime('31-Aug-2024');
+								$currentDate = strtotime(date('Y-m-d'));
+
+								if ($currentDate <= $dateToCompare) {
+									$shipping = 0;
+								}
+								//End free shipping till 31Aug
+
 		        				$shippingSessObj = [
 				        			'pincode' => $request->post('shippingPincode'),
 				        			'shipping' => $shipping
@@ -516,9 +538,22 @@ class Checkout extends Controller {
 
 		        			}
 
+	        			} else {
+	        				$deliveryCharges = $newShipping;
 	        			}
 
 	        		} else {
+
+	        			$deliveryCharges = $shipping;
+
+	        			//Start free shipping till 31Aug
+		        		$dateToCompare = strtotime('31-Aug-2024');
+						$currentDate = strtotime(date('Y-m-d'));
+
+						if ($currentDate <= $dateToCompare) {
+							$shipping = 0;
+						}
+						//End free shipping till 31Aug
 
 	        			$shippingSessObj = [
 		        			'pincode' => $request->post('shippingPincode'),
@@ -546,6 +581,12 @@ class Checkout extends Controller {
 	        		];
 
 	        		$request->session()->put('courierSess', $courierSessObj);
+
+	        		$paymentMethodSessObj = [
+	        			'paymentMethod' => $request->post('paymentMethod'),
+	        		];
+
+	        		$request->session()->put('paymentMethodSess', $paymentMethodSessObj);
 
 	        		$priceData = productPriceMulti();
 	        		$weightData = cartWeightMulti();
@@ -597,125 +638,155 @@ class Checkout extends Controller {
 
 	        		$transactionId = uniqid();
 
-	        		//phonepay payment gateway start
+	        		$paymentMethod = $request->post('paymentMethod');
 
-		        		// $paymentObj = array (
-				        //     'merchantId' => env("PROD_MERCHANT_ID"),
-				        //     'merchantTransactionId' => $transactionId,
-				        //     'merchantUserId' => 'MUID123',
-				        //     'amount' => $paidAmount,
-				        //     'redirectUrl' => route('response'),
-				        //     'redirectMode' => 'REDIRECT',
-				        //     'callbackUrl' => route('response'),
-				        //     'mobileNumber' => $request->post('shippingPhone'),
-				        //     'paymentInstrument' => array (
-				        //     	'type' => 'PAY_PAGE',
-				        //     ),
-				        // );
+	        		if ($paymentMethod == 'phonepe') {
 
-				        // $encode = base64_encode(json_encode($paymentObj));
-				        // $saltKey = env('PROD_MERCHANT_KEY');
-	        			// $saltIndex = 1;
+	        			// $paidAmount = 1;
 
-	        			// $string = $encode.'/pg/v1/pay'.$saltKey;
-	        			// $sha256 = hash('sha256',$string);
-	        			// $finalXHeader = $sha256.'###'.$saltIndex;
-	        			// $url = env('PROD_URL')."/pg/v1/pay";
+	        			$paymentObj = array (
+				            'merchantId' => env("PROD_MERCHANT_ID"),
+				            'merchantTransactionId' => $transactionId,
+				            'merchantUserId' => 'MUID123',
+				            'amount' => $paidAmount*100,
+				            'redirectUrl' => route('response'),
+				            'redirectMode' => 'REDIRECT',
+				            'callbackUrl' => route('response'),
+				            'mobileNumber' => $request->post('shippingPhone'),
+				            'paymentInstrument' => array (
+				            	'type' => 'PAY_PAGE',
+				            ),
+				        );
 
-	        			// $response = Curl::to($url)
-		                // ->withHeader('Content-Type:application/json')
-		                // ->withHeader('X-VERIFY:'.$finalXHeader)
-		                // ->withData(json_encode(['request' => $encode]))
-		                // ->post();
+	        			$encode = base64_encode(json_encode($paymentObj));
+				        $saltKey = env('PROD_MERCHANT_KEY');
+	        			$saltIndex = 1;
 
-		                // $rData = json_decode($response);
+	        			$string = $encode.'/pg/v1/pay'.$saltKey;
+	        			$sha256 = hash('sha256',$string);
+	        			$finalXHeader = $sha256.'###'.$saltIndex;
+	        			$url = env('PROD_URL')."/pg/v1/pay";
 
-	                //phonepay payment gateway
+	        			$response = Curl::to($url)
+		                ->withHeader('Content-Type:application/json')
+		                ->withHeader('X-VERIFY:'.$finalXHeader)
+		                ->withData(json_encode(['request' => $encode]))
+		                ->post();
 
-	                //start payumoney payment gateway
+		                $rData = json_decode($response);
 
-	        		$MERCHANT_KEY = "q8S6BB"; // TEST MERCHANT KEY
-        			$SALT = "FwyslfXn3zDZtugwyHCiZu70zDmariAM"; // TEST SALT
+		                if (isset($rData->success) && $rData->success) {
 
-        			//$PAYU_BASE_URL = "https://test.payu.in";
-        			$PAYU_BASE_URL = "https://secure.payu.in"; // PRODUCATION
+		        			Session::forget('paymentSess');
 
-        			$name = $request->post('shippingName');
-			        $successURL = route('paymentResponse');
-			        $failURL = route('paymentFailPage');
-			        $email = $request->post('shippingEmail');
+		        			//create session for payment initiated
+		        			$paymentInitObj = [
+			        			'transactionId' => $transactionId,
+			        			'paidAmount' => $paidAmount,
+			        		];
 
-			        //$productName = ProductModel::where('id', getCartProductId())->value('name');
-			        $productName = 'eprintcafe';
+			        		$request->session()->put('paymentSess', $paymentInitObj);
+		        			
+		        			$this->status = array(
+								'error' => false,
+								'redirect' => $rData->data->instrumentResponse->redirectInfo->url,
+								'msg' => 'Payment Initiated',
+								'paymentMethod' => 'phonepe',
+							);
 
-			        $action = '';
-			        //$txnid = substr(hash('sha256', mt_rand() . microtime()), 0, 20);
-			        $txnid = $transactionId;
-			        $posted = array();
-			        $posted = array(
-			            'key' => $MERCHANT_KEY,
-			            'txnid' => $txnid,
-			            'amount' => $paidAmount,
-			            'productinfo' => $productName,
-			            'firstname' => $name,
-			            'email' => $email,
-			            'surl' => $successURL,
-			            'furl' => $failURL,
-			            'service_provider' => 'payu_paisa',
-			        );
+		        		} else {
+		        			$this->status = array(
+								'error' => true,
+								'eType' => 'final',
+								'msg' => 'Something went wrong while initiating payment.'
+							);
+		        		}
+	        			
+	        		} else {
 
-			        if(empty($posted['txnid'])) {
-			            // $txnid = substr(hash('sha256', mt_rand() . microtime()), 0, 20);
-			            $txnid = uniqid();
-			        }  else{
-			            $txnid = $posted['txnid'];
-			        }
+	        			$MERCHANT_KEY = "q8S6BB"; // TEST MERCHANT KEY
+	        			$SALT = "FwyslfXn3zDZtugwyHCiZu70zDmariAM"; // TEST SALT
 
-			        $hash = '';
-			        $hashSequence = "key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|udf6|udf7|udf8|udf9|udf10";
+	        			//$PAYU_BASE_URL = "https://test.payu.in";
+	        			$PAYU_BASE_URL = "https://secure.payu.in"; // PRODUCATION
 
-			        if(empty($posted['hash']) && sizeof($posted) > 0) {
-			            $hashVarsSeq = explode('|', $hashSequence);
-			            $hash_string = '';  
-			            foreach($hashVarsSeq as $hash_var) {
-			                $hash_string .= isset($posted[$hash_var]) ? $posted[$hash_var] : '';
-			                $hash_string .= '|';
-			            }
-			            $hash_string .= $SALT;
+	        			$name = $request->post('shippingName');
+				        $successURL = route('paymentResponse');
+				        $failURL = route('paymentFailPage');
+				        $email = $request->post('shippingEmail');
 
-			            $hash = strtolower(hash('sha512', $hash_string));
-			            $action = $PAYU_BASE_URL . '/_payment';
-			        } elseif(!empty($posted['hash'])) {
-			            $hash = $posted['hash'];
-			            $action = $PAYU_BASE_URL . '/_payment';
-			        }
+				        //$productName = ProductModel::where('id', getCartProductId())->value('name');
+				        $productName = 'eprintcafe';
 
-			        Session::forget('paymentSess');
+				        $action = '';
+				        //$txnid = substr(hash('sha256', mt_rand() . microtime()), 0, 20);
+				        $txnid = $transactionId;
+				        $posted = array();
+				        $posted = array(
+				            'key' => $MERCHANT_KEY,
+				            'txnid' => $txnid,
+				            'amount' => $paidAmount,
+				            'productinfo' => $productName,
+				            'firstname' => $name,
+				            'email' => $email,
+				            'surl' => $successURL,
+				            'furl' => $failURL,
+				            'service_provider' => 'payu_paisa',
+				        );
 
-        			//create session for payment initiated
-        			$paymentInitObj = [
-        				'action' => $action,
-        				'hash' => $hash,
-        				'MERCHANT_KEY' => $MERCHANT_KEY,
-        				'txnid' => $txnid,
-        				'successURL' => $successURL,
-        				'failURL' => $failURL,
-        				'name' => $name,
-        				'email' => $email,
-        				'amount' => $paidAmount,
-        				'productinfo' => $productName,
-	        		];
+				        if(empty($posted['txnid'])) {
+				            // $txnid = substr(hash('sha256', mt_rand() . microtime()), 0, 20);
+				            $txnid = uniqid();
+				        }  else{
+				            $txnid = $posted['txnid'];
+				        }
 
-	        		$request->session()->put('paymentSess', $paymentInitObj);
-        			
-        			$this->status = array(
-						'error' => false,
-						// 'redirect' => $rData->data->instrumentResponse->redirectInfo->url,
-						'redirect' => route('payumoneyPage'),
-						'msg' => 'Payment Initiated'
-					);
+				        $hash = '';
+				        $hashSequence = "key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|udf6|udf7|udf8|udf9|udf10";
 
-	                //end payumoney payment gateway
+				        if(empty($posted['hash']) && sizeof($posted) > 0) {
+				            $hashVarsSeq = explode('|', $hashSequence);
+				            $hash_string = '';  
+				            foreach($hashVarsSeq as $hash_var) {
+				                $hash_string .= isset($posted[$hash_var]) ? $posted[$hash_var] : '';
+				                $hash_string .= '|';
+				            }
+				            $hash_string .= $SALT;
+
+				            $hash = strtolower(hash('sha512', $hash_string));
+				            $action = $PAYU_BASE_URL . '/_payment';
+				        } elseif(!empty($posted['hash'])) {
+				            $hash = $posted['hash'];
+				            $action = $PAYU_BASE_URL . '/_payment';
+				        }
+
+				        Session::forget('paymentSess');
+
+	        			//create session for payment initiated
+	        			$paymentInitObj = [
+	        				'action' => $action,
+	        				'hash' => $hash,
+	        				'MERCHANT_KEY' => $MERCHANT_KEY,
+	        				'txnid' => $txnid,
+	        				'successURL' => $successURL,
+	        				'failURL' => $failURL,
+	        				'name' => $name,
+	        				'email' => $email,
+	        				'amount' => $paidAmount,
+	        				'productinfo' => $productName,
+		        		];
+
+		        		$request->session()->put('paymentSess', $paymentInitObj);
+	        			
+	        			$this->status = array(
+							'error' => false,
+							// 'redirect' => $rData->data->instrumentResponse->redirectInfo->url,
+							'redirect' => route('payumoneyPage'),
+							'msg' => 'Payment Initiated',
+							'paymentMethod' => 'payu',
+						);
+
+	        		}
 
 	                // // Log information
 					// Log::info('API Host: ' . $url);
@@ -816,8 +887,7 @@ class Checkout extends Controller {
 
 	        	*/
 
-	        	$productPrice = productPrice();
-
+	        	$productPrice = productPriceMulti();
 	        	$couponCode = null;
 	        	$discount = 0;
 
@@ -835,34 +905,78 @@ class Checkout extends Controller {
 	        		$shipping = $shippingData['shipping'];
 	        	}
 
+	        	$remark = null;
+		    	$remarkData = Session::get('remarkSess');
+		    	if (!empty($remarkData)) {
+		    		$remark = $remarkData['remark'];
+		    	}
+
+		    	$wetransferLink = null;
+		    	$wetransferLinkData = Session::get('wetransferLinkSess');
+		    	if (!empty($wetransferLinkData)) {
+		    		$wetransferLink = $wetransferLinkData['wetransferLink'];
+		    	}
+
+		    	$courier = null;
+		    	$courierData = Session::get('courierSess');
+		    	if (!empty($courierData)) {
+		    		$courier = $courierData['courier'];
+		    	}
+
 	        	$customerAdd = CustomerAddressModel::where('user_id', customerId())->first();
 
+		    	$myCustomerAdd = [];
+
+		    	if (!empty($customerAdd)) {
+		    		$myCustomerAdd = json_encode($customerAdd->toArray());
+		    	} else {
+		    		$myCustomerAdd = json_encode($myCustomerAdd);
+		    	}
+
 	        	$getCartData = CartModel::where('user_id', customerId())
-	        	->orderBy('cart.id', 'desc')
-	        	->first();
-	        	$productName = ProductModel::where('id', getCartProductId())->value('name');
+		    	->orderBy('cart.id', 'desc')
+		    	->get();
+
+	        	$getDocumentLink = CartModel::where('user_id', customerId())->take(1)->value('document_link');
 
 	        	//$barcode = BarcodeModel::where(['is_active' => 1, 'is_used' => 0])->first();
 
+	        	$paidAmount = $productPrice->subTotal;
+	    		$packagingCharges = 0;
+	    		if (setting('packaging_charges')) {
+	    			$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+		        	$paidAmount += $packagingCharges;
+	    		}
+
+	    		$paidAmount += $productPrice->shipping;
+		        $paidAmount -= $productPrice->discount;
+
 	        	$orderObj = array(
-	        		'order_id' => $transactionId,
-	        		'user_id' => customerId(),
-	        		'product_id' => getCartProductId(),
-	        		'product_name' => $productName,
-	        		'product_details' => json_encode(productSpec(getCartId())),
-	        		'weight_details' => json_encode(cartWeight()),
-	        		'coupon_code' => $couponCode,
-	        		'discount' => $discount,
-	        		'shipping' => $shipping,
-	        		// 'paid_amount' => ceil($productPrice->total),
-	        		'paid_amount' => $productPrice->total,
-	        		'price_details' => json_encode($productPrice),
-	        		'transaction_details' => json_encode($response->data),
-	        		'customer_address' => json_encode($customerAdd->toArray()),
-	        		'document_link' => $getCartData->document_link,
-	        		'qty' => $getCartData->qty,
-	        		'no_of_copies' => $getCartData->no_of_copies,
-	        	);
+		    		'order_id' => $transactionId,
+		    		'user_id' => customerId(),
+		    		// 'product_id' => getCartProductId(),
+		    		// 'product_name' => $productName,
+		    		// 'product_details' => json_encode(productSpec(getCartId())),
+		    		// 'weight_details' => json_encode(cartWeight()),
+		    		'coupon_code' => $couponCode,
+		    		'discount' => $discount,
+		    		'shipping' => $shipping,
+		    		// 'paid_amount' => ceil($productPrice->total),
+		    		// 'paid_amount' => $productPrice->total,
+		    		'packaging_charges' => $packagingCharges,
+		    		'paid_amount' => $paidAmount,
+		    		// 'price_details' => json_encode($productPrice),
+		    		'transaction_details' => json_encode($_POST),
+		    		// 'customer_address' => json_encode($customerAdd->toArray()),
+		    		'customer_address' => $myCustomerAdd,
+		    		'document_link' => $getDocumentLink,
+		    		'remark' => $remark,
+		    		'wetransfer_link' => $wetransferLink,
+		    		'courier' => $courier,
+		    		'payment_method' => 'Phonepe',
+		    		// 'qty' => $getCartData->qty,
+		    		// 'no_of_copies' => $getCartData->no_of_copies,
+		    	);
 
 	        	// if (!empty($barcode)) {
 	        	// 	$orderObj['shipping_label_number'] = $barcode->barcode;
@@ -877,6 +991,29 @@ class Checkout extends Controller {
 	        		// 	BarcodeModel::where('id', $barcode->id)->update(['is_used' => 1]);
 	        		// }
 
+	        		$orderId = $isOrderCreated->id;
+
+		    		foreach ($getCartData as $cartData) {
+
+		    			$productName = ProductModel::where('id', $cartData->product_id)->value('name');
+		    			
+		    			$orderItemObj = array(
+		    				'order_id' => $orderId,
+		    				'product_id' => $cartData->product_id,
+		    				'product_name' => $productName,
+		    				'qty' => $cartData->qty,
+		    				'no_of_copies' => $cartData->no_of_copies,
+		    				'product_details' => json_encode(productSpec($cartData->id)),
+		    				'weight_details' => json_encode(cartWeightSingle($cartData->id)),
+		    				'price_details' => json_encode(productSinglePrice($cartData->product_id)),
+		    				'qty' => $cartData->qty,
+		    				'no_of_copies' => $cartData->no_of_copies,
+		    			);
+
+		    			OrderItemModel::create($orderItemObj);
+
+		    		}
+
 	        		$getCustomer = CustomerModel::where('id', customerId())->first();
 
 	        		//Remove Cart Data
@@ -887,26 +1024,39 @@ class Checkout extends Controller {
 
 	        		//send email
 	        		//$orderId = 8;
-					$getOrder = OrderModel::
-					join('product', 'orders.product_id', '=', 'product.id')
-					->select('orders.*', 'product.registered_hsn_code', 'product.unregistered_hsn_code')
-					->where('orders.id', $isOrderCreated->id)->first();
+					// $getOrder = OrderModel::
+					// join('product', 'orders.product_id', '=', 'product.id')
+					// ->select('orders.*', 'product.registered_hsn_code', 'product.unregistered_hsn_code')
+					// ->where('orders.id', $isOrderCreated->id)->first();
 
-					EmailSending::orderEmail($getOrder);
+					// EmailSending::orderEmail($getOrder);
 	        		
-	        		Session::forget('shippingSess');
-	        		Session::forget('couponSess');
-	        		Session::forget('paymentSess');
-	        		Session::forget('documents');
+	        		// Session::forget('shippingSess');
+	        		// Session::forget('couponSess');
+	        		// Session::forget('paymentSess');
+	        		// Session::forget('documents');
 
-	        		return redirect()->route('thankyouPage', ['amount' => $orderObj['paid_amount'], 'transaction_id' => $orderObj['order_id']]);
+	        		EmailSending::orderEmailNew($orderId);
+	    		
+		    		Session::forget('shippingSess');
+		    		Session::forget('couponSess');
+		    		Session::forget('paymentSess');
+		    		Session::forget('documents');
+		    		Session::forget('remarkSess');
+		    		Session::forget('wetransferLinkSess');
+		    		Session::forget('courierSess');
+
+					return redirect()->route('thankyouPage', ['amount' => $paidAmount, 'transactionId' => $transactionId]);
 
 	        	} else {
 
 	        		Session::forget('shippingSess');
-	        		Session::forget('couponSess');
-	        		Session::forget('paymentSess');
-	        		Session::forget('documents');
+		    		Session::forget('couponSess');
+		    		Session::forget('paymentSess');
+		    		Session::forget('documents');
+		    		Session::forget('remarkSess');
+		    		Session::forget('wetransferLinkSess');
+		    		Session::forget('courierSess');
 
 	        		return redirect()->route('paymentFailPage');
 	        	}
@@ -914,9 +1064,12 @@ class Checkout extends Controller {
 	        } else {
 
 	        	Session::forget('shippingSess');
-        		Session::forget('couponSess');
-        		Session::forget('paymentSess');
-        		Session::forget('documents');
+	    		Session::forget('couponSess');
+	    		Session::forget('paymentSess');
+	    		Session::forget('documents');
+	    		Session::forget('remarkSess');
+	    		Session::forget('wetransferLinkSess');
+	    		Session::forget('courierSess');
 
 	        	return redirect()->route('paymentFailPage');
 	        }
@@ -927,6 +1080,9 @@ class Checkout extends Controller {
     		Session::forget('couponSess');
     		Session::forget('paymentSess');
     		Session::forget('documents');
+    		Session::forget('remarkSess');
+    		Session::forget('wetransferLinkSess');
+    		Session::forget('courierSess');
 
         	return redirect()->route('checkoutPage');
         }

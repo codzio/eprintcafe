@@ -9,6 +9,7 @@ use App\Http\Controllers\Cron;
 use App\Http\Controllers\Customer;
 use App\Http\Controllers\Cart;
 use App\Http\Controllers\Checkout;
+use App\Http\Controllers\Upload;
 
 //Backend
 use App\Http\Controllers\admin\Auth;
@@ -52,6 +53,8 @@ Route::prefix('/')->group(function() {
     Route::get('/about-us', [Home::class, 'about'])->name('aboutPage');
     Route::get('/pay-now/{orderid}', [Home::class, 'payNow'])->name('payNow');
 
+    Route::get('/upload', [Upload::class, 'index'])->name('uploadPage');
+
     Route::get('/privacy-policy', [Home::class, 'privacyPolicy'])->name('privacyPolicyPage');
     Route::get('/return-policy', [Home::class, 'returnPolicy'])->name('returnPolicyPage');
     Route::get('/shipping-policy', [Home::class, 'shippingPolicy'])->name('shippingPolicyPage');
@@ -60,6 +63,9 @@ Route::prefix('/')->group(function() {
 
     Route::get('/login', [Customer::class, 'login'])->name('loginPage');
     Route::get('/register', [Customer::class, 'register'])->name('registerPage');
+    Route::get('/track-orders', [Home::class, 'trackOrders'])->name('trackOrdersPage');
+    Route::post('/doTrackOrder', [Home::class, 'doTrackOrder'])->name('doTrackOrder');
+
     Route::get('/verify-account', [Customer::class, 'verifyAccount'])->name('verifyAccountPage');
     Route::post('/doVerifyAccount', [Customer::class, 'doVerifyAccount'])->name('doVerifyAccount');
     Route::post('/doResendRegisOtp', [Customer::class, 'doResendRegisOtp'])->name('doResendRegisOtp');
@@ -299,6 +305,7 @@ Route::prefix(config('admin.path'))->middleware('web')->group(function () {
             Route::get('/packing-slip/{id}', [Orders::class, 'packingSlip'])->name('adminPackingSlipOrder');
             Route::post('/doUpdateBarcode', [Orders::class, 'doUpdateBarcode'])->name('adminUpdateBarcode');
             Route::post('/doUpdateOrderStatus', [Orders::class, 'doUpdateOrderStatus'])->name('adminUpdateOrderStatus');
+            Route::post('/doUpdatePickupOption', [Orders::class, 'doUpdatePickupOption'])->name('adminUpdatePickupOption');
             
             Route::post('/doDelete', [Orders::class, 'doDelete'])->name('adminDeleteOrder');
             Route::post('/doBulkDelete', [Orders::class, 'doBulkDelete'])->name('adminBulkDeleteOrder');
