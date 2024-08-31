@@ -155,7 +155,7 @@
 
                         <h2 class="billing-details" style="display:none;">Billing Details</h2>
 
-                        <div class="row mb-6 billing-details" style="display:none;">                    
+                        <div class="row mb-6 billing-details" stgetPaperTypeListyle="display:none;">                    
                             <div class="col-lg-3">                        
                                 <div class="row">
                                     <label class="col-lg-12 col-form-label fw-semibold fs-6 required">Billing Name</label>
@@ -515,6 +515,7 @@
                                 <p><strong>Shipping Charge:</strong><span id="shippingData">0</span></p>
                                 <p><strong>Sub Total:</strong><span id="subTotalData">0</span></p>
                                 <p class="all-total"><strong>Packaging Charges:</strong><span id="totalPackagingCharges">0</span></p>
+                                <p class="all-total"><strong>GST:</strong><span id="gstCharges">0</span></p>
                                 <p class="all-total"><strong>Total:</strong><span id="totalData">0</span></p>
                             </div>
                         </div> 
@@ -968,6 +969,6 @@
 
         dataUrl = '{{ route("getAdminCustomers") }}';
     </script>
-    <script src="{{ asset('public/backend/js/admin/customers.js?v=3') }}"></script>
+    <script src="{{ asset('public/backend/js/admin/customers.js?v=5') }}"></script>
 
 @endsection

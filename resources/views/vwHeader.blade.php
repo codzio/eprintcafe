@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="facebook-domain-verification" content="layzn4ks2zqdivl31x9n44t0hityh8" />
-<meta name="csrf-token" content="{{ csrf_token() }}">  
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="shortcut icon" href="{{ getImg(setting('favicon')); }}"/>
 <title>{{ setting('website_name') }} | {{ $title }}</title>
 
@@ -19,8 +19,8 @@
 <link href="{{ asset('public/frontend') }}/css/font-awesome.min.css" rel="stylesheet" type="text/css">
 <link href="{{ asset('public/frontend') }}/css/ionicons.min.css" rel="stylesheet">
 <link href="{{ asset('public/frontend') }}/css/main.css" rel="stylesheet">
-<link href="{{ asset('public/frontend') }}/css/style.css?v=4" rel="stylesheet">
-<link href="{{ asset('public/frontend') }}/css/responsive.css?v=4" rel="stylesheet">
+<link href="{{ asset('public/frontend') }}/css/style.css?v=5" rel="stylesheet">
+<link href="{{ asset('public/frontend') }}/css/responsive.css?v=5" rel="stylesheet">
 
 <!-- JavaScripts -->
 <script src="{{ asset('public/frontend') }}/js/modernizr.js"></script>

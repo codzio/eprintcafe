@@ -32,6 +32,8 @@ class Cart extends Controller {
 
 	public function index(Request $request) {
 
+		return redirect()->route('uploadPage');
+
 		$tempId = $request->cookie('tempUserId');
 		$userId = customerId();
 
@@ -320,9 +322,21 @@ class Cart extends Controller {
 
 	        } else {
 
+	        	//get cart data
 	        	$cartId = $request->post('cartId');
-	        	CartModel::where('id', $cartId)->delete();
+	        	$cartData = CartModel::where('id', $cartId)->first();
 
+	        	if (!empty($cartData)) {
+
+	        		//check if file name exist
+	        		if (!empty($cartData->file_name)) {
+	        			File::delete(public_path($cartData->file_path.'/'.$cartData->file_name));
+	        		}
+
+	        	}	        	
+
+	        	CartModel::where('id', $cartId)->delete();
+	        	
 	        	//remove other items
 	        	// if (customerId()) {
 	        	// 	CartModel::where('user_id', customerId())->delete();
@@ -584,6 +598,15 @@ class Cart extends Controller {
 					        		} else {
 					        			$shipping = $isPincodeExist->from2000_3000gm;
 					        		}
+
+					        		//Start free shipping till 31Aug
+					        		$dateToCompare = strtotime('31-Aug-2024');
+									$currentDate = strtotime(date('Y-m-d'));
+
+									if ($currentDate <= $dateToCompare) {
+										$shipping = 0;
+									}
+									//End free shipping till 31Aug
 		                				
 	                				if ($getCoupon->coupon_for == 'shipping') {
 

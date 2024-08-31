@@ -69,6 +69,8 @@
                                <th>No of Pages</th>
                                <th>Copies</th>
                                <th>Total</th>
+                               <th>Remark</th>
+                               <th>File</th>
                                <th>Date</th>
                            </thead>
                            <tbody>
@@ -96,6 +98,14 @@
                                 <td>{{ $cart->qty }}</td>
                                 <td>{{ $cart->no_of_copies }}</td>
                                 <td>{{ productSinglePriceAbdCart($productId, $userId)->total }}</td>
+                                <td>{{ $cart->remark }}</td>
+                                <td>
+                                   @if(!empty($cart->file_name))
+                                    <a download href="{{ asset('public') }}/{{ $cart->file_path.'/'.$cart->file_name }}">Download</a>
+                                   @else
+                                   <a href="javascript:void(0)">No File</a>
+                                   @endif
+                                </td>
                                 <td>{{ date('d-m-Y h:i A', strtotime($cart->created_at)) }}</td>
                             </tr>
                             @endforeach

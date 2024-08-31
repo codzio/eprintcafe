@@ -24,6 +24,7 @@ use App\Models\BarcodeModel;
 
 use App\Models\PricingModel;
 use App\Models\BindingModel;
+use App\Models\GsmModel;
 use App\Models\LaminationModel;
 use App\Models\CoverModel;
 use App\Models\ShippingModel;
@@ -1716,13 +1717,18 @@ class Orders extends Controller {
 					$paperSize = $request->post('paperSize');
 					$paperGsm = $request->post('paperGsm');
 
-					$getPaperType = PricingModel::
-					join('gsm', 'pricing.paper_type_id', '=', 'gsm.paper_type')
-					->join('paper_type', 'gsm.paper_type', '=', 'paper_type.id')
-					->where(['pricing.product_id' => $productId, 'pricing.paper_size_id' => $paperSize, 'pricing.paper_gsm_id' => $paperGsm])
-					->select('pricing.paper_type_id', 'paper_type.paper_type', 'gsm.paper_type_price')
-					->distinct('gsm.id')
-					->get();
+					// $getPaperType = PricingModel::
+					// join('gsm', 'pricing.paper_type_id', '=', 'gsm.paper_type')
+					// ->join('paper_type', 'gsm.paper_type', '=', 'paper_type.id')
+					// ->where(['pricing.product_id' => $productId, 'pricing.paper_size_id' => $paperSize, 'pricing.paper_gsm_id' => $paperGsm])
+					// ->select('pricing.paper_type_id', 'paper_type.paper_type', 'gsm.paper_type_price')
+					// ->distinct('gsm.id')
+					// ->get();
+
+					$getPaperType = GsmModel::
+						join('paper_type', 'gsm.paper_type', '=', 'paper_type.id')
+						->select('paper_type.paper_type', 'paper_type.id as paper_type_id', 'gsm.paper_type_price')
+						->where(['gsm.paper_size' => $paperSize, 'gsm.id' => $paperGsm])->get();
 
 					$paperTypeOptions = '<option value="">Select Paper Type</option>';
 
@@ -1999,6 +2005,15 @@ class Orders extends Controller {
 		        		}
 	        		}
 
+	        		//Start free shipping till 31Aug
+	        		$dateToCompare = strtotime('31-Aug-2024');
+					$currentDate = strtotime(date('Y-m-d'));
+
+					if ($currentDate <= $dateToCompare && $totalAmount >= 50) {
+						$shipping = 0;
+					}
+					//End free shipping till 31Aug
+
 	        		$shippingSessObj = [
 	        			'pincode' => $request->post('shippingPincode'),
 	        			'shipping' => $shipping
@@ -2026,6 +2041,14 @@ class Orders extends Controller {
 			    			$paidAmount += $packagingCharges;
 			    		}
 
+			    		//add 5% GST
+			    		$gstCharges = 0;
+			    		if (setting('gst')) {
+			    			$gstCharges = ($paidAmount*setting('gst'))/100;
+			    			$gstCharges = round($gstCharges, 2);
+			    			$paidAmount += $gstCharges;
+			    		}
+
 		        		if ($additionalDiscount) {
 		        			$paidAmount = $paidAmount-$additionalDiscount;
 		        		}
@@ -2036,6 +2059,7 @@ class Orders extends Controller {
 							'totalWeight' => number_format($totalWeight, 2),
 							'additionalDiscount' => $additionalDiscount,
 							'packagingCharges' => $packagingCharges,
+							'gstCharges' => $gstCharges,
 							'paidAmount' => $paidAmount,
 						);
 
@@ -2082,6 +2106,14 @@ class Orders extends Controller {
 				    			$paidAmount += $packagingCharges;
 				    		}
 
+				    		//add 5% GST
+				    		$gstCharges = 0;
+				    		if (setting('gst')) {
+				    			$gstCharges = ($paidAmount*setting('gst'))/100;
+				    			$gstCharges = round($gstCharges, 2);
+				    			$paidAmount += $gstCharges;
+				    		}
+
 			        		if ($additionalDiscount) {
 			        			$paidAmount = $paidAmount-$additionalDiscount;
 			        		}
@@ -2094,6 +2126,7 @@ class Orders extends Controller {
 								'additionalDiscount' => $additionalDiscount,
 								'saveProductListTemp' => $saveProductListTemp,
 								'packagingCharges' => $packagingCharges,
+								'gstCharges' => $gstCharges,
 								'paidAmount' => $paidAmount,
 							);
 
@@ -2215,6 +2248,14 @@ class Orders extends Controller {
 			        		$paidAmount += $packagingCharges;
 			        	}
 
+			        	//add 5% GST
+			    		$gstCharges = 0;
+			    		if (setting('gst')) {
+			    			$gstCharges = ($paidAmount*setting('gst'))/100;
+			    			$gstCharges = round($gstCharges, 2);
+			    			$paidAmount += $gstCharges;
+			    		}
+
 			        	$paidAmount = $paidAmount-$additionalDiscount;
 
 			        	$orderObj = array(
@@ -2233,6 +2274,7 @@ class Orders extends Controller {
 			        		//'paid_amount' => $totalAmount,
 			        		// 'paid_amount' => $priceData->total-$additionalDiscount,
 
+			        		'gst_charges' => $gstCharges,
 			        		'packaging_charges' => $packagingCharges,
 			        		'paid_amount' => $paidAmount,
 
@@ -2295,6 +2337,9 @@ class Orders extends Controller {
 					    				'product_detail_ids' => json_encode($productDetailIds),
 					    				'weight_details' => json_encode(cartWeightSingleCusOrder($cartData->id, $cartData->user_id)),
 	    								'price_details' => json_encode(productSinglePriceForCusOrder($cartData->product_id, $cartData->user_id)),
+	    								'file_path' => $cartData->file_path,
+	    								'file_name' => $cartData->file_name,
+	    								'remark' => $cartData->remark,
 					    			);
 
 					    			OrderItemModel::create($orderItemObj);
@@ -2614,6 +2659,15 @@ class Orders extends Controller {
 				        		}
 			        		}
 
+			        		//Start free shipping till 31Aug
+			        		$dateToCompare = strtotime('31-Aug-2024');
+							$currentDate = strtotime(date('Y-m-d'));
+
+							if ($currentDate <= $dateToCompare && $totalAmount >= 50) {
+								$shipping = 0;
+							}
+							//End free shipping till 31Aug
+
 			        		$shippingSessObj = [
 			        			'pincode' => $request->post('shippingPincode'),
 			        			'shipping' => $shipping
@@ -2643,11 +2697,20 @@ class Orders extends Controller {
 					    			$newPaidAmount += $packagingCharges;
 					    		}
 
+					    		//add 5% GST
+					    		$gstCharges = 0;
+					    		if (setting('gst')) {
+					    			$gstCharges = ($newPaidAmount*setting('gst'))/100;
+					    			$gstCharges = round($gstCharges, 2);
+					    			$newPaidAmount += $gstCharges;
+					    		}
+
 					    		$newPaidAmount = $newPaidAmount-$additionalDiscount;
 
 			        			OrderModel::where('id', $orderId)->update([
 			        				'paid_amount' => $newPaidAmount,
 			        				'shipping' => $shipping,
+			        				'gst_charges' => $gstCharges,
 			        				'packaging_charges' => $packagingCharges,
 			        				'additional_discount' => $additionalDiscount,
 			        				'is_shipping_free' => ($isShippingFree)? 1:0,
@@ -2761,6 +2824,15 @@ class Orders extends Controller {
 						        		}
 					        		}
 
+					        		//Start free shipping till 31Aug
+					        		$dateToCompare = strtotime('31-Aug-2024');
+									$currentDate = strtotime(date('Y-m-d'));
+
+									if ($currentDate <= $dateToCompare && $totalAmount >= 50) {
+										$shipping = 0;
+									}
+									//End free shipping till 31Aug
+
 					        		$paidAmount = $totalAmount+$shipping;
 						        	$packagingCharges = 0;
 
@@ -2769,12 +2841,21 @@ class Orders extends Controller {
 						        		$paidAmount += $packagingCharges;
 						        	}
 
+						        	//add 5% GST
+						    		$gstCharges = 0;
+						    		if (setting('gst')) {
+						    			$gstCharges = ($paidAmount*setting('gst'))/100;
+						    			$gstCharges = round($gstCharges, 2);
+						    			$paidAmount += $gstCharges;
+						    		}
+
 						        	$paidAmount = $paidAmount-$additionalDiscount;
 
 					        		$updateOrderObj = array(
 						        		'shipping' => $shipping,
 						        		// 'paid_amount' => $totalAmount+$shipping,
 						        		'paid_amount' => $paidAmount,
+						        		'gst_charges' => $gstCharges,
 						        		'packaging_charges' => $packagingCharges,
 						        		'additional_discount' => $additionalDiscount,
 						        		'is_shipping_free' => $request->post('shippingFree')? 1:0,
@@ -2906,6 +2987,14 @@ class Orders extends Controller {
 					        		$paidAmount += $packagingCharges;
 					        	}
 
+					        	//add 5% GST
+					    		$gstCharges = 0;
+					    		if (setting('gst')) {
+					    			$gstCharges = ($paidAmount*setting('gst'))/100;
+					    			$gstCharges = round($gstCharges, 2);
+					    			$paidAmount += $gstCharges;
+					    		}
+
 					        	$paidAmount = $paidAmount-$additionalDiscount;
 
 					        	$orderObj = array(
@@ -2922,6 +3011,7 @@ class Orders extends Controller {
 					        		// 'paid_amount' => $totalAmount,
 					        		//'paid_amount' => $priceData->total-$additionalDiscount,
 
+					        		'gst_charges' => $gstCharges,
 					        		'packaging_charges' => $packagingCharges,
 		        					'paid_amount' => $paidAmount,
 
@@ -3242,6 +3332,14 @@ class Orders extends Controller {
 			        	$totalAmount = $priceData->subTotal;
 		        		$totalWeightInGm = $totalWeight*1000;
 
+		        		//add 5% GST
+			    		$gstCharges = 0;
+			    		if (setting('gst')) {
+			    			$gstCharges = ($totalAmount*setting('gst'))/100;
+			    			$gstCharges = round($gstCharges, 2);
+			    			$totalAmount += $gstCharges;
+			    		}
+
 		        		$additionalDiscount = $request->post('additionalDiscount');
 
 		        		if ($additionalDiscount) {
@@ -3271,10 +3369,20 @@ class Orders extends Controller {
 			        		}
 		        		}
 
+		        		//Start free shipping till 31Aug
+		        		$dateToCompare = strtotime('31-Aug-2024');
+						$currentDate = strtotime(date('Y-m-d'));
+
+						if ($currentDate <= $dateToCompare && $totalAmount >= 50) {
+							$shipping = 0;
+						}
+						//End free shipping till 31Aug
+
 		        		$updateOrderObj = array(
 			        		'shipping' => $shipping,
 			        		'paid_amount' => $totalAmount+$shipping,
 			        		'additional_discount' => $additionalDiscount,
+			        		'gst_charges' => $gstCharges,
 			        		'is_shipping_free' => $request->post('isShippingFree')? 1:0,
 			        	);
 

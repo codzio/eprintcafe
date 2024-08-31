@@ -22,6 +22,7 @@ use App\Models\ProductModel;
 use App\Models\PricingModel;
 use App\Models\BindingModel;
 use App\Models\LaminationModel;
+use App\Models\GsmModel;
 use App\Models\CoverModel;
 use App\Models\ShippingModel;
 use App\Models\OrderModel;
@@ -418,13 +419,18 @@ class Home extends Controller {
 					$paperSize = $request->post('paperSize');
 					$paperGsm = $request->post('paperGsm');
 
-					$getPaperType = PricingModel::
-					join('gsm', 'pricing.paper_type_id', '=', 'gsm.paper_type')
-					->join('paper_type', 'gsm.paper_type', '=', 'paper_type.id')
-					->where(['pricing.product_id' => $productId, 'pricing.paper_size_id' => $paperSize, 'pricing.paper_gsm_id' => $paperGsm])
-					->select('pricing.paper_type_id', 'paper_type.paper_type', 'gsm.paper_type_price')
-					->distinct('gsm.id')
-					->get();
+					// $getPaperType = PricingModel::
+					// join('gsm', 'pricing.paper_type_id', '=', 'gsm.paper_type')
+					// ->join('paper_type', 'gsm.paper_type', '=', 'paper_type.id')
+					// ->where(['pricing.product_id' => $productId, 'pricing.paper_size_id' => $paperSize, 'pricing.paper_gsm_id' => $paperGsm])
+					// ->select('pricing.paper_type_id', 'paper_type.paper_type', 'gsm.paper_type_price')
+					// ->distinct('gsm.id')
+					// ->get();
+
+					$getPaperType = GsmModel::
+						join('paper_type', 'gsm.paper_type', '=', 'paper_type.id')
+						->select('paper_type.paper_type', 'paper_type.id as paper_type_id', 'gsm.paper_type_price')
+						->where(['gsm.paper_size' => $paperSize, 'gsm.id' => $paperGsm])->get();
 
 					$paperTypeOptions = '<option value="">Select Paper Type</option>';
 
@@ -741,6 +747,14 @@ class Home extends Controller {
     		$paidAmount += $productPrice->shipping;
 	        $paidAmount -= $productPrice->discount;
 
+	        //add 5% GST
+    		$gstCharges = 0;
+    		if (setting('gst')) {
+    			$gstCharges = ($paidAmount*setting('gst'))/100;
+    			$gstCharges = round($gstCharges, 2);
+    			$paidAmount += $gstCharges;
+    		}
+
 	    	$orderObj = array(
 	    		'order_id' => $request->post('txnid'),
 	    		'user_id' => customerId(),
@@ -754,6 +768,7 @@ class Home extends Controller {
 	    		// 'paid_amount' => ceil($productPrice->total),
 	    		// 'paid_amount' => $productPrice->total,
 	    		'packaging_charges' => $packagingCharges,
+	    		'gst_charges' => $gstCharges,
 	    		'paid_amount' => $paidAmount,
 	    		// 'price_details' => json_encode($productPrice),
 	    		'transaction_details' => json_encode($_POST),
@@ -792,6 +807,9 @@ class Home extends Controller {
 	    				'price_details' => json_encode(productSinglePrice($cartData->product_id)),
 	    				'qty' => $cartData->qty,
 	    				'no_of_copies' => $cartData->no_of_copies,
+	    				'file_path' => $cartData->file_path,
+	    				'file_name' => $cartData->file_name,
+	    				'remark' => $cartData->remark,
 	    			);
 
 	    			OrderItemModel::create($orderItemObj);

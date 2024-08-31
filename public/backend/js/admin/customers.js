@@ -244,6 +244,7 @@ $("#kt_form_submit_calculate").click(function (e) {
                 }
 
                 $("#totalPackagingCharges").html(res.packagingCharges);
+                $("#gstCharges").html(res.gstCharges);
 
                 // $("#kt_form_submit_calculate").hide();
                 // $("#kt_form_submit").show(); 
@@ -321,6 +322,7 @@ $("#kt_form_submit_save").click(function (e) {
                 }
 
                 $("#totalPackagingCharges").html(res.packagingCharges);
+                $("#gstCharges").html(res.gstCharges);
 
                 $("#saveProductListTemp").html(res.saveProductListTemp);
 

@@ -577,6 +577,8 @@
                                         <th>Price</th>
                                         <th>No Of Pages/Copies</th>
                                         <th>Total</th>
+                                        <th>Remark</th>
+                                        <th>File</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
@@ -617,6 +619,14 @@
                                             <input onchange="updateSaveCustomOrder(this)" data-url="{{ route('adminDoUpdateSaveCustomOrder') }}" data-action="copies" data-orderid="{{ $orderId }}" data-id="{{ $cart->id }}" min="1" id="copies" type="number" style="width:95px; text-align: center;" name="copies[{{ $cart->id }}]" value="{{ $cart->no_of_copies }}" placeholder="No of Copies">
                                         </td>
                                         <td>{{ productSinglePriceForSaveCusOrder($productId, $orderId)->total }}</td>
+                                        <td>{{ $cart->remark }}</td>
+                                        <td>
+                                           @if(!empty($cart->file_name))
+                                            <a download href="{{ asset('public') }}/{{ $cart->file_path.'/'.$cart->file_name }}">Download</a>
+                                           @else
+                                           <a href="javascript:void(0)">No File</a>
+                                           @endif
+                                        </td>
                                         <td>
                                             <a onclick="updateSaveCustomOrder(this)" data-url="{{ route('adminDoUpdateSaveCustomOrder') }}" data-action="delete" data-orderid="{{ $orderId }}" data-id="{{ $cart->id }}" href="javascript:void(0)"><i class="text-danger ki-outline ki-trash fs-2"></i></a>
                                         </td>
@@ -1030,6 +1040,6 @@
 
         dataUrl = '{{ route("getAdminCustomers") }}';        
     </script>
-    <script src="{{ asset('public/backend/js/admin/customers.js?v=4') }}"></script>
+    <script src="{{ asset('public/backend/js/admin/customers.js?v=5') }}"></script>
 
 @endsection

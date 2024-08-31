@@ -193,6 +193,15 @@
                            </tr>
 
                            <tr>
+                               <th>Gst Charges</th>
+                               @if($adminData->role_id == 1)
+                               <td style="color:green;font-weight: bold;">{{ $order->gst_charges }}</td>
+                               @else
+                               <td>XXXX</td>
+                               @endif
+                           </tr>
+
+                           <tr>
                                <th>Paid Amount</th>
                                @if($adminData->role_id == 1)
                                <td style="color:green;font-weight: bold;">{{ $order->paid_amount }}</td>
@@ -330,6 +339,8 @@
                                <th>Copies</th>
                                <th>Product Details</th>
                                <th>Price Detail</th>
+                               <th>Remark</th>
+                               <th>File</th>
                            </thead>
                            <tbody>
                             @php $i=1; @endphp
@@ -355,6 +366,14 @@
 
                                    <li><strong>Lamination:</strong> {{ $priceDetail->lamination }}</li>
                                    <li><strong>Cover:</strong> {{ $priceDetail->cover }}</li>
+                               </td>
+                               <td>{{ $orderItem->remark }}</td>
+                               <td>
+                                   @if(!empty($orderItem->file_name))
+                                    <a download href="{{ asset('public') }}/{{ $orderItem->file_path.'/'.$orderItem->file_name }}">Download</a>
+                                   @else
+                                   <a href="javascript:void(0)">No File</a>
+                                   @endif
                                </td>
                             </tr>
                             @endforeach

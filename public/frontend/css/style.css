@@ -5292,7 +5292,8 @@ main {
       align-items: center;
       background:var(--grey-light);
 /*      border: 1px solid var(--green-color);*/
-      padding:16% 2%;
+/*      padding:16% 2%;*/
+		padding:22% 0;
   }
   .tab-heading-sec a.active{
       background:var(--secondary-color-3);

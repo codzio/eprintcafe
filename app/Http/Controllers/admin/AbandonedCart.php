@@ -396,6 +396,9 @@ class AbandonedCart extends Controller {
 				            'qty' => $cartItem->qty,
 				            'no_of_copies' => $cartItem->no_of_copies,
 				            'document_link' => $cartItem->document_link,
+				            'file_path' => $cartItem->file_path,
+				            'file_name' => $cartItem->file_name,
+				            'remark' => $cartItem->remark,
 				        ];
 				    })->toArray();
 

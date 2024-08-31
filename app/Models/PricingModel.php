@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\BindingModel;
 use App\Models\LaminationModel;
 use App\Models\CoverModel;
+use App\Models\GsmModel;
 
 class PricingModel extends Model
 {
@@ -120,13 +121,18 @@ class PricingModel extends Model
             
             $paperSize = $paperSizeData->id;
 
-            $getPaperType = self::
-            join('gsm', 'pricing.paper_type_id', '=', 'gsm.paper_type')
-            ->join('paper_type', 'gsm.paper_type', '=', 'paper_type.id')
-            ->where(['pricing.product_id' => $pId, 'pricing.paper_size_id' => $paperSize, 'pricing.paper_gsm_id' => $paperGsm])
-            ->select('pricing.paper_type_id', 'paper_type.paper_type', 'gsm.paper_type_price')
-            ->distinct('gsm.id')
-            ->get();
+            // $getPaperType = self::
+            // join('gsm', 'pricing.paper_type_id', '=', 'gsm.paper_type')
+            // ->join('paper_type', 'gsm.paper_type', '=', 'paper_type.id')
+            // ->where(['pricing.product_id' => $pId, 'pricing.paper_size_id' => $paperSize, 'pricing.paper_gsm_id' => $paperGsm])
+            // ->select('pricing.paper_type_id', 'paper_type.paper_type', 'gsm.paper_type_price')
+            // ->distinct('gsm.id')
+            // ->get();
+
+            $getPaperType = GsmModel::
+            join('paper_type', 'gsm.paper_type', '=', 'paper_type.id')
+            ->select('paper_type.paper_type', 'paper_type.id as paper_type_id', 'gsm.paper_type_price')
+            ->where(['gsm.paper_size' => $paperSize, 'gsm.id' => $paperGsm])->get();
 
             $paperTypeId = null;
 
@@ -230,6 +236,7 @@ class PricingModel extends Model
         ->get();
 
         $paperColorOptions = '<option value="">Select Color</option>';
+        $paperColorId = null;
 
         if (!empty($getPaperColor) && $getPaperColor->count()) {
             $i=1;
@@ -237,6 +244,7 @@ class PricingModel extends Model
                 $sel = '';
                 if ($i==1) {
                     $sel = 'selected';
+                    $paperColorId = $color->color;
                 }
                 $paperColorOptions .= '<option '.$sel.' data-price="'.$color->other_price.'" value="'.$color->color.'">'.$color->color.'</option>';
                 $i++;
@@ -244,6 +252,7 @@ class PricingModel extends Model
         }
 
         return (object) array(
+            'paperColorId' => $paperColorId,
             'paperColorOptions' => $paperColorOptions,
         );
     }

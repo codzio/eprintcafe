@@ -548,9 +548,14 @@ class Customer extends Controller {
 						$redirectUrl = route('checkoutPage');
 					}
 
+					if ($action == 'upload') {
+						$redirectUrl = route('uploadPage');
+					}
+
 					//check if product slug exist
 					if (ProductModel::where('slug', $action)->first()->count()) {
-						$redirectUrl = route('productPage', ['slug' => ProductModel::where('slug', $action)->value('slug')]);
+						// $redirectUrl = route('productPage', ['slug' => ProductModel::where('slug', $action)->value('slug')]);
+						$redirectUrl = route('uploadPage', ['product' => ProductModel::where('slug', $action)->value('slug')]);
 					}
 
 				}
@@ -706,10 +711,15 @@ class Customer extends Controller {
 									$redirectUrl = route('checkoutPage');
 								}
 
+								if ($action == 'upload') {
+									$redirectUrl = route('uploadPage');
+								}
+
 								//check if product slug exist
 								$isProductExist = ProductModel::where('slug', $action)->first();
 								if (!empty($isProductExist) && $isProductExist->count()) {
-									$redirectUrl = route('productPage', ['slug' => ProductModel::where('slug', $action)->value('slug')]);
+									// $redirectUrl = route('productPage', ['slug' => ProductModel::where('slug', $action)->value('slug')]);
+									$redirectUrl = route('uploadPage', ['product' => ProductModel::where('slug', $action)->value('slug')]);
 								}
 
 							}

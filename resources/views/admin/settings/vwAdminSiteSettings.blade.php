@@ -141,6 +141,18 @@
 						</div>
 
 						<div class="row mb-6">                    
+							<label class="col-lg-3 col-form-label fw-semibold fs-6 required">GST (%)</label>
+							<div class="col-lg-9">                        
+								<div class="row">
+									<div class="col-lg-12 fv-row">
+										<input min="0" type="number" name="gst" class="form-control form-control-lg form-control-solid mb-3 mb-lg-0" placeholder="GST" value="{{ $setting->gst }}">
+										<span id="gstErr" class="text-danger"></span>
+									</div>                            
+								</div>
+							</div>                    
+						</div>
+
+						<div class="row mb-6">                    
 							<label class="col-lg-3 col-form-label fw-semibold fs-6 required">Copyright</label>
 							<div class="col-lg-9">                        
 								<div class="row">

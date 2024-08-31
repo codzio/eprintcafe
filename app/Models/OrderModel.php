@@ -8,7 +8,7 @@ class OrderModel extends Model
 {
     
     protected $table = 'orders';
-    protected $fillable = ['order_id', 'admin_id', 'user_id', 'product_id', 'invoice_number', 'product_name', 'product_details', 'weight_details', 'coupon_code', 'discount', 'shipping', 'packaging_charges', 'paid_amount', 'price_details', 'transaction_details', 'customer_address', 'document_link', 'qty', 'no_of_copies', 'status', 'order_status', 'is_shipping_free', 'remark', 'additional_discount', 'wetransfer_link', 'courier', 'payment_method', 'is_deleted'];
+    protected $fillable = ['order_id', 'admin_id', 'user_id', 'product_id', 'invoice_number', 'product_name', 'product_details', 'weight_details', 'coupon_code', 'discount', 'shipping', 'packaging_charges', 'gst_charges', 'paid_amount', 'price_details', 'transaction_details', 'customer_address', 'document_link', 'qty', 'no_of_copies', 'status', 'order_status', 'is_shipping_free', 'remark', 'additional_discount', 'wetransfer_link', 'courier', 'payment_method', 'is_deleted'];
     protected $guarded = ['id'];
 
     protected static function boot()

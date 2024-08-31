@@ -16,6 +16,8 @@
         "nwidart/laravel-modules": "^10.0",
         "phpmailer/phpmailer": "^6.8",
         "phpoffice/phpspreadsheet": "^2.0",
+        "phpoffice/phpword": "*",
+        "smalot/pdfparser": "*",
         "spatie/flysystem-dropbox": "^3.0"
     },
     "require-dev": {

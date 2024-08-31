@@ -481,6 +481,96 @@ function productSpec($cartId) {
 	}
 }
 
+function productSpecNew($cartId) {
+	
+	$cartData = CartModel::join('product', 'cart.product_id', '=', 'product.id')
+		->where(['cart.id' => $cartId, 'product.is_active' => 1])
+		->select('cart.*', 'product.name', 'product.thumbnail_id')
+		->orderBy('cart.id', 'desc')
+		->first();
+
+	if (!empty($cartData)) {
+			
+		$productId = $cartData->product_id;
+		$paperSizeId = $cartData->paper_size_id;
+		$paperGsmId = $cartData->paper_gsm_id;
+		$paperTypeId = $cartData->paper_type_id;
+		$printSide = $cartData->print_side;
+		$color = $cartData->color;
+		$bindingId = $cartData->binding_id;
+		$laminationId = $cartData->lamination_id;
+		$coverId = $cartData->cover_id;
+
+		$getPaperSize = PaperSizeModel::where('id', $paperSizeId)->value('size');
+		$getPaperGsm = GsmModel::where('id', $paperGsmId)->value('gsm');
+		$getPaperType = PaperTypeModel::where('id', $paperTypeId)->value('paper_type');
+		$getBinding = BindingModel::where('id', $bindingId)->value('binding_name');
+		$getLamination = LaminationModel::where('id', $laminationId)->first();
+		$getCover = CoverModel::where('id', $coverId)->value('cover');
+
+		$lamination = '';
+
+		if (isset($getLamination->lamination) && isset($getLamination->lamination_type)) {
+			$lamination = $getLamination->lamination.' - '.$getLamination->lamination_type;
+		}
+
+		$data = [
+			'productId' => $productId,
+
+			'paperSize' => $getPaperSize,
+			'paperSizeId' => $paperSizeId,
+
+			'paperGsm' => $getPaperGsm,
+			'paperGsmId' => $paperGsmId,
+
+			'paperType' => $getPaperType,
+			'paperTypeId' => $paperTypeId,
+
+			'paperSide' => $cartData->print_side,
+			'color' => $cartData->color,
+
+			'binding' => $getBinding,
+			'bindingId' => $bindingId,
+			'bindingPrice' => 0,
+			'split' => 0,
+
+			'lamination' => $lamination,
+			'laminationId' => $laminationId,
+
+			'cover' => $getCover
+		];
+
+		if (!empty($bindingId)) {
+			
+			//$bindingData = BindingModel::where('id', $bindingId)->value('price');
+			$bindingData = BindingModel::where('id', $bindingId)->first();
+
+			if (!empty($bindingData)) {
+
+				$totalSplit = 1;
+				$multiple = ($printSide == 'Double Side')? 2:1;
+				$bindingSplit = $bindingData->split;
+	            $bindingSplit = $bindingSplit*$multiple;
+
+	            if (!empty($bindingSplit) && $cartData->qty > $bindingSplit) {
+	              $totalSplit = ceil($cartData->qty/$bindingSplit); 
+	            } else {
+	            	$totalSplit = 0;
+	            }
+
+				$data['bindingPrice'] = $bindingData->price;
+				$data['split'] = $totalSplit;
+			}
+
+		}
+
+		return (object) $data;
+
+	} else {
+		return false;
+	}
+}
+
 function productSpecForCusOrder($customCartId) {
 	
 	$cartData = CustomCartModel::join('product', 'custom_cart.product_id', '=', 'product.id')
@@ -2521,7 +2611,7 @@ function cartWeightMulti() {
 
 		}
 
-		return $totalWeight;
+		return number_format($totalWeight, 2, '.', '');
 
 	} else {
 		return false;
@@ -2902,4 +2992,68 @@ function amountToWords($amount) {
     }
 
     return $output;
+}
+
+//New 24/08/2024
+
+function getPaperSizeList($productId) {
+	return PricingModel::
+	  join('paper_size', 'pricing.paper_size_id', '=', 'paper_size.id')
+	  ->where('pricing.product_id', $productId)
+	  ->select('paper_size.*')
+	  ->distinct('paper_size.id')
+	  ->get();
+}
+
+function getPaperGsmList($productId, $paperSizeId) {
+	return PricingModel::
+		join('gsm', 'pricing.paper_gsm_id', '=', 'gsm.id')
+		->join('paper_type', 'gsm.paper_type', '=', 'paper_type.id')
+		->where(['pricing.product_id' => $productId, 'pricing.paper_size_id' => $paperSizeId])
+		->select('gsm.*', 'paper_type.paper_type as paper_type_name')
+		->distinct('gsm.id')
+		->orderBy('gsm.gsm', 'asc')
+		->get();
+}
+
+function getPaperTypeList($productId, $paperSizeId, $gsmId) {
+	// return PricingModel::
+	// 	join('gsm', 'pricing.paper_type_id', '=', 'gsm.paper_type')
+	// 	->join('paper_type', 'gsm.paper_type', '=', 'paper_type.id')
+	// 	->where(['pricing.product_id' => $productId, 'pricing.paper_size_id' => $paperSizeId, 'pricing.paper_gsm_id' => $gsmId])
+	// 	->select('pricing.paper_type_id', 'paper_type.paper_type', 'gsm.paper_type_price')
+	// 	->distinct('gsm.id')
+	// 	->get();
+	return GsmModel::
+	join('paper_type', 'gsm.paper_type', '=', 'paper_type.id')
+	->select('paper_type.paper_type', 'paper_type.id as paper_type_id', 'gsm.paper_type_price')
+	->where(['gsm.paper_size' => $paperSizeId, 'gsm.id' => $gsmId])->get();
+}
+
+function getPaperSideList($productId, $paperSizeId, $gsmId, $paperTypeId) {
+	return PricingModel::
+		where(['product_id' => $productId, 'paper_size_id' => $paperSizeId, 'paper_gsm_id' => $gsmId, 'paper_type_id' => $paperTypeId])
+		->select('side')
+		->distinct('product_id')
+		->get();
+}
+
+function getPaperColorList($productId, $paperSizeId, $gsmId, $paperTypeId, $paperSide) {
+	return PricingModel::
+	where(['product_id' => $productId, 'paper_size_id' => $paperSizeId, 'paper_gsm_id' => $gsmId, 'paper_type_id' => $paperTypeId, 'side' => $paperSide])
+	->select('color', 'other_price')
+	->distinct('color')
+	->get();
+}
+
+function getBindingList($paperSizeId) {
+	return BindingModel::where('paper_size_id', $paperSizeId)->get();
+}
+
+function getLaminationList($paperSizeId) {
+	return LaminationModel::where('paper_size_id', $paperSizeId)->get();
+}
+
+function getCoverList() {
+	return CoverModel::get();
 }

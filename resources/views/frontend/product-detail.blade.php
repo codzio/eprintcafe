@@ -132,7 +132,6 @@
   }
 </style>
 
-@if(!$customerId)
 <!-- Popular Products -->
 <section id="page-title-new" class="page-title-parallax title-center page-title-dark" style="background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url({{ $bannerImg }}) center center; padding: 64px 0px;">
   <div class="container clearfix ng-scope">
@@ -143,20 +142,23 @@
     @endif
 
     <div class="banner_btn">
-        <a class="button" href="{{ route('registerPage', ['action' => $product->slug]) }}">{{ $buttonName }}</a>
+        @if(!$customerId)
+          <a class="button" href="{{ route('registerPage', ['action' => $product->slug]) }}">{{ $buttonName }}</a>
+        @else
+          <a class="button" href="{{ route('uploadPage', ['product' => $product->slug]) }}">{{ $buttonName }}</a>
+        @endif
         <!-- <a class="button" href="#">Calculate Price</a> -->
     </div>
   </div>
 </section>
-@endif
 
-<section class="{{ $customerId? 'padding-top-100':''; }} padding-bottom-100">
+<section class="{{ ($customerId && 1 != 1)? 'padding-top-100':''; }} padding-bottom-100">
   <div class="container"> 
     
     <!-- SHOP DETAIL -->
     <div class="shop-detail">
       
-      @if($customerId)
+      @if($customerId && 1 != 1)
       <div class="row"> 
         
         <!-- Popular Images Slider -->
@@ -358,20 +360,22 @@
               </div>
           </div> -->
         </div>
-
-        
-        
       </div>
       @endif
 
       <div class="detail_page_disc">
         {!! $product->description !!}
 
-        @if(!$customerId)
         <div class="banner_btn" style="text-align:center;">
-          <a class="button" href="{{ route('registerPage', ['action' => $product->slug]) }}" style="margin-top: 50px;">PRINT NOW</a>
+          
+
+          @if(!$customerId)
+            <a class="button" href="{{ route('registerPage', ['action' => $product->slug]) }}" style="margin-top: 50px;">PRINT NOW</a>
+          @else
+            <a class="button" href="{{ route('uploadPage', ['product' => $product->slug]) }}" style="margin-top: 50px;">PRINT NOW</a>
+          @endif
+
         </div>
-        @endif
 
       </div>
     </div>

@@ -110,6 +110,15 @@ Route::prefix('/')->group(function() {
     Route::get('/testPayu', [Home::class, 'testPayu'])->name('testPayu');
 });
 
+Route::prefix('/upload')->middleware('customerSessionCheck')->group(function(){
+    Route::post('/doUploadFiles', [Upload::class, 'doUploadFiles'])->name('doUploadFiles');
+    Route::post('/getProductPricing', [Upload::class, 'getProductPricing'])->name('getProductPricing');
+    Route::post('/doUpdateCart', [Upload::class, 'doUpdateCart'])->name('doUpdateCart');
+    Route::post('/getTab4Data', [Upload::class, 'getTab4Data'])->name('getTab4Data');
+    Route::post('/doApplyPromo', [Upload::class, 'doApplyPromo'])->name('applyUploadPromo');
+    Route::post('/doPlaceOrder', [Upload::class, 'doPlaceOrder'])->name('uploadPlaceOrder');
+});
+
 Route::prefix('/customer')->middleware('customerSessionCheck')->group(function(){
     Route::get('/dashboard', [Customer::class, 'dashboard'])->name('customerDashboard');
     Route::get('/logout', [Customer::class, 'logout'])->name('customerLogout');

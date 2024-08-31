@@ -48,6 +48,8 @@ class Checkout extends Controller {
 
 	public function index(Request $request) {
 
+		return redirect()->route('uploadPage');
+
 		//remove payment session & document session
 		Session::forget('paymentSess');
 		//Session::forget('documents');
@@ -234,7 +236,6 @@ class Checkout extends Controller {
 	        		$totalWeight = cartWeightMulti(); //in kg
 	        		$totalWeightInGm = $totalWeight*1000;
 
-
 	        		$shipping = 0;
 
 	        		//check free shipping
@@ -284,12 +285,17 @@ class Checkout extends Controller {
 	        		// print_r($priceData);
 	        		// die();
 
+	        		$customerAddress = CustomerAddressModel::where('user_id', $userId)->first();
+
+	        		$deliveryDetailTemp = view('frontend/components/delivery-details', compact('customerAddress'))->render();
+
 	        		$this->status = array(
 						'error' => false,						
 						'msg' => 'The address has been saved',
 						'priceData' => $priceData,
 						'paidAmount' => $paidAmount,
 						'packagingCharges' => $packagingCharges,
+						'deliveryDetailTemp' => $deliveryDetailTemp,
 					);
 
 	        	} else {
@@ -951,6 +957,14 @@ class Checkout extends Controller {
 	    		$paidAmount += $productPrice->shipping;
 		        $paidAmount -= $productPrice->discount;
 
+		        //add 5% GST
+	    		$gstCharges = 0;
+	    		if (setting('gst')) {
+	    			$gstCharges = ($paidAmount*setting('gst'))/100;
+	    			$gstCharges = round($gstCharges, 2);
+	    			$paidAmount += $gstCharges;
+	    		}
+
 	        	$orderObj = array(
 		    		'order_id' => $transactionId,
 		    		'user_id' => customerId(),
@@ -964,6 +978,7 @@ class Checkout extends Controller {
 		    		// 'paid_amount' => ceil($productPrice->total),
 		    		// 'paid_amount' => $productPrice->total,
 		    		'packaging_charges' => $packagingCharges,
+		    		'gst_charges' => $gstCharges,
 		    		'paid_amount' => $paidAmount,
 		    		// 'price_details' => json_encode($productPrice),
 		    		'transaction_details' => json_encode($_POST),
@@ -1008,6 +1023,9 @@ class Checkout extends Controller {
 		    				'price_details' => json_encode(productSinglePrice($cartData->product_id)),
 		    				'qty' => $cartData->qty,
 		    				'no_of_copies' => $cartData->no_of_copies,
+		    				'file_path' => $cartData->file_path,
+		    				'file_name' => $cartData->file_name,
+		    				'remark' => $cartData->remark,
 		    			);
 
 		    			OrderItemModel::create($orderItemObj);

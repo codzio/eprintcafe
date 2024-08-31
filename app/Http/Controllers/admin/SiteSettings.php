@@ -44,6 +44,7 @@ class SiteSettings extends Controller {
 			'background_image' => $setting->getSetting('background_image'),
 			'website_name' => $setting->getSetting('website_name'),
 			'packaging_charges' => $setting->getSetting('packaging_charges'),
+			'gst' => $setting->getSetting('gst'),
 			'copyright' => $setting->getSetting('copyright'),
 			
 			'header_scripts' => $setting->getSetting('header_scripts'),
@@ -123,6 +124,7 @@ class SiteSettings extends Controller {
 	            'backgroundImage' => 'required|numeric',
 	            'websiteName' => 'required',
 	            'packagingCharges' => 'required',
+	            'gst' => 'required|numeric',
 	            'copyright' => 'required',
 	        ]);
 
@@ -145,6 +147,7 @@ class SiteSettings extends Controller {
 				    'admin_logo' => $request->post('adminLogo'),
 				    'website_logo' => $request->post('websiteLogo'),
 				    'packaging_charges' => $request->post('packagingCharges'),
+				    'gst' => $request->post('gst'),
 				    'favicon' => $request->post('favicon'),
 				    'background_image' => $request->post('backgroundImage'),
 				    'website_name' => $request->post('websiteName'),
