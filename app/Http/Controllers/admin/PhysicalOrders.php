@@ -15,8 +15,13 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cookie;
 
 use App\Models\ProductModel;
+
 use App\Models\OrderModel;
 use App\Models\OrderItemModel;
+
+use App\Models\PhysicalOrderModel;
+use App\Models\PhysicalOrderItemModel;
+
 use App\Models\AdminModel;
 use App\Models\CustomerModel;
 use App\Models\CustomerAddressModel;
@@ -39,7 +44,7 @@ use Milon\Barcode\DNS2D;
 //GDrive
 use App\Services\GoogleDriveService;
 
-class Orders extends Controller {
+class PhysicalOrders extends Controller {
 
 	private $status = array();
 
@@ -50,12 +55,12 @@ class Orders extends Controller {
 		}
 
 		$data = array(
-			'title' => 'Orders',
-			'pageTitle' => 'Orders',
-			'menu' => 'order',
+			'title' => 'Physical Orders',
+			'pageTitle' => 'Physical Orders',
+			'menu' => 'physical-orders',
 		);
 
-		return view('admin/order/index', $data);
+		return view('admin/physical-order/index', $data);
 
 	}
 
@@ -66,12 +71,12 @@ class Orders extends Controller {
 		}
 
 		$data = array(
-			'title' => 'Deleted Orders',
-			'pageTitle' => 'Deleted Orders',
-			'menu' => 'order',
+			'title' => 'Deleted Physical Orders',
+			'pageTitle' => 'Deleted Physical Orders',
+			'menu' => 'physical-orders',
 		);
 
-		return view('admin/order/deleted-orders', $data);
+		return view('admin/physical-order/deleted-orders', $data);
 
 	}
 
@@ -110,10 +115,10 @@ class Orders extends Controller {
 		    $searchValue = $search_arr['value']; // Search value
 
 		     // Total records
-		    $totalRecords = OrderModel::join('customer', 'orders.user_id', '=', 'customer.id')->select('count(*) as allcount')->where('orders.is_deleted', 0);
+		    $totalRecords = PhysicalOrderModel::join('customer', 'physical_orders.user_id', '=', 'customer.id')->select('count(*) as allcount')->where('physical_orders.is_deleted', 0);
 		    $totalRecords = $totalRecords->count();
 
-		    $totalRecordswithFilter = OrderModel::join('customer', 'orders.user_id', '=', 'customer.id')->select('count(*) as allcount')->where('orders.is_deleted', 0);
+		    $totalRecordswithFilter = PhysicalOrderModel::join('customer', 'physical_orders.user_id', '=', 'customer.id')->select('count(*) as allcount')->where('physical_orders.is_deleted', 0);
 
 		    // if (!empty($searchValue)) {
 		    // 	$totalRecordswithFilter->where('admins.name', 'like', '%' .$searchValue . '%');
@@ -122,20 +127,18 @@ class Orders extends Controller {
 		    if (!empty($searchValue)) {
 			    $totalRecordswithFilter->where(function ($query) use ($searchValue) {
 
-			        $query->where('orders.order_id', 'like', '%' . $searchValue . '%')
+			        $query->where('physical_orders.order_id', 'like', '%' . $searchValue . '%')
 			        	  ->orWhere('customer.name', 'like', '%' . $searchValue . '%')
 			        	  ->orWhere('customer.phone', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.product_name', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.qty', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.no_of_copies', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.paid_amount', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.status', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.order_status', 'like', '%' . $searchValue . '%');
+			        	  ->orWhere('physical_orders.qty', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('physical_orders.paid_amount', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('physical_orders.status', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('physical_orders.order_status', 'like', '%' . $searchValue . '%');
 
 			        // if (strtolower($searchValue) == 'active') {
-			        // 	$query->orWhere('orders.is_active', 'like', '%1%');
+			        // 	$query->orWhere('physical_orders.is_active', 'like', '%1%');
 			        // } elseif (strtolower($searchValue) == 'inactive') {
-			        // 	$query->orWhere('orders.is_active', 'like', '%0%');
+			        // 	$query->orWhere('physical_orders.is_active', 'like', '%0%');
 			        // }
 
 			    });
@@ -144,7 +147,7 @@ class Orders extends Controller {
 		    $totalRecordswithFilter = $totalRecordswithFilter->count();
 
 		     // Fetch records
-		    $records = OrderModel::join('customer', 'orders.user_id', '=', 'customer.id')->select('orders.*', 'customer.name','customer.phone')->where('orders.is_deleted', 0)->skip($start)->take($rowperpage);
+		    $records = PhysicalOrderModel::join('customer', 'physical_orders.user_id', '=', 'customer.id')->select('physical_orders.*', 'customer.name','customer.phone')->where('physical_orders.is_deleted', 0)->skip($start)->take($rowperpage);
 
 		    // if (!empty($searchValue)) {
 		    // 	$records->where('admins.name', 'like', '%' .$searchValue . '%');
@@ -152,20 +155,18 @@ class Orders extends Controller {
 
 		    if (!empty($searchValue)) {
 			    $records->where(function ($query) use ($searchValue) {
-			        $query->where('orders.order_id', 'like', '%' . $searchValue . '%')
+			        $query->where('physical_orders.order_id', 'like', '%' . $searchValue . '%')
 			        	  ->orWhere('customer.name', 'like', '%' . $searchValue . '%')
 			        	  ->orWhere('customer.phone', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.product_name', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.qty', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.no_of_copies', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.paid_amount', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.status', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.order_status', 'like', '%' . $searchValue . '%');
+			        	  ->orWhere('physical_orders.qty', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('physical_orders.paid_amount', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('physical_orders.status', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('physical_orders.order_status', 'like', '%' . $searchValue . '%');
 
 			        // if (strtolower($searchValue) == 'active') {
-			        // 	$query->orWhere('orders.is_active', 'like', '%1%');
+			        // 	$query->orWhere('physical_orders.is_active', 'like', '%1%');
 			        // } elseif (strtolower($searchValue) == 'inactive') {
-			        // 	$query->orWhere('orders.is_active', 'like', '%0%');
+			        // 	$query->orWhere('physical_orders.is_active', 'like', '%0%');
 			        // }
 
 			    });
@@ -176,7 +177,7 @@ class Orders extends Controller {
 		    } elseif (!empty($columnName)) {
 		    	$records->orderBy($columnName, 'desc');	
 		    } else {
-		    	$records->orderBy('orders.id','desc');
+		    	$records->orderBy('physical_orders.id','desc');
 		    }
 
 		    $getAdminData = adminInfo();
@@ -189,7 +190,7 @@ class Orders extends Controller {
 		    	foreach($records as $record){
 			        $id = $record->id;
 
-			        $viewUrl = route('adminViewOrder', $id);
+			        $viewUrl = route('adminViewPhysicalOrder', $id);
 			        $invoiceUrl = route('adminInvoiceOrder', $id);
 			        $packingSlip = '';
 			        $singleDel = '';
@@ -198,14 +199,14 @@ class Orders extends Controller {
 			        $editOrder = '';
 
 			        if ($record->status == 'unpaid') {
-			        	$editOrder = 
-			        	'
-			        		<div class="menu-item">
-								<a title="Edit" href="'.$editUrl.'" class="menu-link px-3">
-									<span class="menu-icon"><i class="ki-outline ki-pencil fs-2"></i></span>
-								</a>
-							</div>
-						';
+			        	// $editOrder = 
+			        	// '
+			        	// 	<div class="menu-item">
+						// 		<a title="Edit" href="'.$editUrl.'" class="menu-link px-3">
+						// 			<span class="menu-icon"><i class="ki-outline ki-pencil fs-2"></i></span>
+						// 		</a>
+						// 	</div>
+						// ';
 			        }
 
 			        if ($record->shipping_label_number) {
@@ -217,11 +218,11 @@ class Orders extends Controller {
 			        }
 
 			        if ($getAdminData->role_id == 1) {
-			        	$singleDel = '<div class="menu-item">
-										<a title="Delete" href="javascript:void(0)" data-url="'.$singleDelUrl.'" onclick="deleteData(this)" data-id="'.$id.'" class="menu-link text-danger px-3">
-											<span class="menu-icon"><i class="ki-outline ki-trash fs-2"></i></span>
-										</a>
-									</div>';
+			        	// $singleDel = '<div class="menu-item">
+						// 				<a title="Delete" href="javascript:void(0)" data-url="'.$singleDelUrl.'" onclick="deleteData(this)" data-id="'.$id.'" class="menu-link text-danger px-3">
+						// 					<span class="menu-icon"><i class="ki-outline ki-trash fs-2"></i></span>
+						// 				</a>
+						// 			</div>';
 			        }
 
 			        // $editUrl = route('adminEditShipping', $id);
@@ -235,14 +236,6 @@ class Orders extends Controller {
 						<div class="d-flex justify-content-end">
 							<div class="ms-2">
 								<div class="menu menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-150px py-4" data-kt-menu="true">
-
-									<div class="menu-item">
-										<a target="_blank" title="Download Invoice" href="'.$invoiceUrl.'" class="menu-link px-3">
-											<span class="menu-icon"><i class="ki-outline ki-document fs-2"></i></span>
-										</a>
-									</div>
-
-									'.$packingSlip.'
 									
 									<div class="menu-item">
 										<a title="View Order" href="'.$viewUrl.'" class="menu-link px-3">
@@ -366,10 +359,10 @@ class Orders extends Controller {
 		    $searchValue = $search_arr['value']; // Search value
 
 		     // Total records
-		    $totalRecords = OrderModel::join('customer', 'orders.user_id', '=', 'customer.id')->select('count(*) as allcount')->where('orders.is_deleted', 1);
+		    $totalRecords = PhysicalOrderModel::join('customer', 'physical_orders.user_id', '=', 'customer.id')->select('count(*) as allcount')->where('physical_orders.is_deleted', 1);
 		    $totalRecords = $totalRecords->count();
 
-		    $totalRecordswithFilter = OrderModel::join('customer', 'orders.user_id', '=', 'customer.id')->select('count(*) as allcount')->where('orders.is_deleted', 1);
+		    $totalRecordswithFilter = PhysicalOrderModel::join('customer', 'physical_orders.user_id', '=', 'customer.id')->select('count(*) as allcount')->where('physical_orders.is_deleted', 1);
 
 		    // if (!empty($searchValue)) {
 		    // 	$totalRecordswithFilter->where('admins.name', 'like', '%' .$searchValue . '%');
@@ -378,20 +371,18 @@ class Orders extends Controller {
 		    if (!empty($searchValue)) {
 			    $totalRecordswithFilter->where(function ($query) use ($searchValue) {
 
-			        $query->where('orders.order_id', 'like', '%' . $searchValue . '%')
+			        $query->where('physical_orders.order_id', 'like', '%' . $searchValue . '%')
 			        	  ->orWhere('customer.name', 'like', '%' . $searchValue . '%')
 			        	  ->orWhere('customer.phone', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.product_name', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.qty', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.no_of_copies', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.paid_amount', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.status', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.order_status', 'like', '%' . $searchValue . '%');
+			        	  ->orWhere('physical_orders.qty', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('physical_orders.paid_amount', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('physical_orders.status', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('physical_orders.order_status', 'like', '%' . $searchValue . '%');
 
 			        // if (strtolower($searchValue) == 'active') {
-			        // 	$query->orWhere('orders.is_active', 'like', '%1%');
+			        // 	$query->orWhere('physical_orders.is_active', 'like', '%1%');
 			        // } elseif (strtolower($searchValue) == 'inactive') {
-			        // 	$query->orWhere('orders.is_active', 'like', '%0%');
+			        // 	$query->orWhere('physical_orders.is_active', 'like', '%0%');
 			        // }
 
 			    });
@@ -400,7 +391,7 @@ class Orders extends Controller {
 		    $totalRecordswithFilter = $totalRecordswithFilter->count();
 
 		     // Fetch records
-		    $records = OrderModel::join('customer', 'orders.user_id', '=', 'customer.id')->select('orders.*', 'customer.name','customer.phone')->where('orders.is_deleted', 1)->skip($start)->take($rowperpage);
+		    $records = PhysicalOrderModel::join('customer', 'physical_orders.user_id', '=', 'customer.id')->select('physical_orders.*', 'customer.name','customer.phone')->where('physical_orders.is_deleted', 1)->skip($start)->take($rowperpage);
 
 		    // if (!empty($searchValue)) {
 		    // 	$records->where('admins.name', 'like', '%' .$searchValue . '%');
@@ -408,20 +399,18 @@ class Orders extends Controller {
 
 		    if (!empty($searchValue)) {
 			    $records->where(function ($query) use ($searchValue) {
-			        $query->where('orders.order_id', 'like', '%' . $searchValue . '%')
+			        $query->where('physical_orders.order_id', 'like', '%' . $searchValue . '%')
 			        	  ->orWhere('customer.name', 'like', '%' . $searchValue . '%')
 			        	  ->orWhere('customer.phone', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.product_name', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.qty', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.no_of_copies', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.paid_amount', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.status', 'like', '%' . $searchValue . '%')
-			        	  ->orWhere('orders.order_status', 'like', '%' . $searchValue . '%');
+			        	  ->orWhere('physical_orders.qty', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('physical_orders.paid_amount', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('physical_orders.status', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('physical_orders.order_status', 'like', '%' . $searchValue . '%');
 
 			        // if (strtolower($searchValue) == 'active') {
-			        // 	$query->orWhere('orders.is_active', 'like', '%1%');
+			        // 	$query->orWhere('physical_orders.is_active', 'like', '%1%');
 			        // } elseif (strtolower($searchValue) == 'inactive') {
-			        // 	$query->orWhere('orders.is_active', 'like', '%0%');
+			        // 	$query->orWhere('physical_orders.is_active', 'like', '%0%');
 			        // }
 
 			    });
@@ -432,7 +421,7 @@ class Orders extends Controller {
 		    } elseif (!empty($columnName)) {
 		    	$records->orderBy($columnName, 'desc');	
 		    } else {
-		    	$records->orderBy('orders.id','desc');
+		    	$records->orderBy('physical_orders.id','desc');
 		    }
 
 		    $getAdminData = adminInfo();
@@ -445,7 +434,7 @@ class Orders extends Controller {
 		    	foreach($records as $record){
 			        $id = $record->id;
 
-			        $viewUrl = route('adminViewOrder', $id);
+			        $viewUrl = route('adminViewPhysicalOrder', $id);
 			        $invoiceUrl = route('adminInvoiceOrder', $id);
 			        $singleDel = '';
 			        
@@ -458,6 +447,7 @@ class Orders extends Controller {
 											<span class="menu-icon"><i class="ki-outline ki-trash fs-2"></i></span>
 										</a>
 									</div>';
+                        $singleDel = "";
 			        }
 
 			        // $editUrl = route('adminEditShipping', $id);
@@ -708,41 +698,33 @@ class Orders extends Controller {
 			return redirect(route('adminDashboard'));
 		}
 
-		$orderData = OrderModel::where('id', $id)->first();
+		$orderData = PhysicalOrderModel::where('id', $id)->first();
 
 		if (!empty($orderData) && $orderData->count()){
 
 			$userId = $orderData->user_id;
 			$customerData = CustomerModel::where('id', $userId)->first();
-			$priceDetail = json_decode($orderData->price_details);
 			$transactionDetail = json_decode($orderData->transaction_details);
 			$addressDetails = json_decode($orderData->customer_address);
-			$documentLinks = [];
-
-			if (!empty($orderData->document_link)) {
-				$documentLinks = json_decode($orderData->document_link);
-			}
 
 			$getAdminData = adminInfo();
 			$adminUserData = adminInfoById($orderData->admin_id);
-			$orderItems = OrderItemModel::where('order_id', $orderData->id)->get();
+			$orderItems = PhysicalOrderItemModel::where('order_id', $orderData->id)->get();
 
 			$data = array(
-				'title' => 'Order Detail',
-				'pageTitle' => 'Order Detail',
-				'menu' => 'order',
+				'title' => 'Physical Order Detail',
+				'pageTitle' => 'Physical Order Detail',
+				'menu' => 'physical-order',
 				'order' => $orderData,
 				'customer' => $customerData,
-				'priceDetail' => $priceDetail,
 				'transactionDetail' => $transactionDetail,
 				'addressDetails' => $addressDetails,
-				'documentLinks' => $documentLinks,
 				'adminData' => $getAdminData,
 				'orderItems' => $orderItems,
 				'adminUserData' => $adminUserData,
 			);
 
-			return view('admin/order/view', $data);
+			return view('admin/physical-order/view', $data);
 			
 		} else {
 			return redirect(route('adminOrders'));
@@ -763,9 +745,9 @@ class Orders extends Controller {
 			if (!empty($orderData->product_id)) {
 				
 				$getOrder = OrderModel::
-				join('product', 'orders.product_id', '=', 'product.id')
-				->select('orders.*', 'product.registered_hsn_code', 'product.unregistered_hsn_code')
-				->where('orders.id', $orderData->id)->first();
+				join('product', 'physical_orders.product_id', '=', 'product.id')
+				->select('physical_orders.*', 'product.registered_hsn_code', 'product.unregistered_hsn_code')
+				->where('physical_orders.id', $orderData->id)->first();
 
 				$priceData = json_decode($getOrder->price_details);
 		        $productDetails = json_decode($getOrder->product_details);
@@ -855,9 +837,9 @@ class Orders extends Controller {
 			if (!empty($orderData->product_id)) {
 
 				$getOrder = OrderModel::
-				join('product', 'orders.product_id', '=', 'product.id')
-				->select('orders.*', 'product.registered_hsn_code', 'product.unregistered_hsn_code')
-				->where('orders.id', $orderData->id)->first();
+				join('product', 'physical_orders.product_id', '=', 'product.id')
+				->select('physical_orders.*', 'product.registered_hsn_code', 'product.unregistered_hsn_code')
+				->where('physical_orders.id', $orderData->id)->first();
 
 				$priceData = json_decode($getOrder->price_details);
 		        $productDetails = json_decode($getOrder->product_details);
@@ -1277,17 +1259,17 @@ class Orders extends Controller {
 	        	$id = $request->post('id');
 
 	        	//check if data exist
-	        	$getData = OrderModel::where('id', '=', $id)->first();	        	
+	        	$getData = PhysicalOrderModel::where('id', '=', $id)->first();	        	
 	        	
 	        	if (!empty($getData)) {
 	        		
-	        		OrderItemModel::where('order_id', $id)->delete();
-	        		$isDeleted = OrderModel::where('id', $id)->delete();
+	        		PhysicalOrderItemModel::where('order_id', $id)->delete();
+	        		$isDeleted = PhysicalOrderModel::where('id', $id)->delete();
 
         			if ($isDeleted) {
         				$this->status = array(
 							'error' => false,								
-							'msg' => 'Order has been deleted successfully.'
+							'msg' => 'Physical Order has been deleted successfully.'
 						);
         			} else {
         				$this->status = array(
@@ -1355,21 +1337,21 @@ class Orders extends Controller {
 	        	$action = $request->post('action');
 
 	        	//check if data exist
-	        	$getData = OrderModel::whereIn('id', $ids)->get();	
+	        	$getData = PhysicalOrderModel::whereIn('id', $ids)->get();	
 	        	
 	        	if (!empty($getData)) {
 
 	        		if ($action == 'temp') {
-	        			$isDeleted = OrderModel::whereIn('id', $ids)->update(['is_deleted' => 1]);
+	        			$isDeleted = PhysicalOrderModel::whereIn('id', $ids)->update(['is_deleted' => 1]);
 	        		} else {
 	        			OrderItemModel::whereIn('order_id', $ids)->delete();
-	        			$isDeleted = OrderModel::whereIn('id', $ids)->delete();
+	        			$isDeleted = PhysicalOrderModel::whereIn('id', $ids)->delete();
 	        		}
 	        		
 	        		if ($isDeleted) {
         				$this->status = array(
 							'error' => false,								
-							'msg' => 'Orders has been deleted successfully.'
+							'msg' => 'Physical Orders has been deleted successfully.'
 						);
         			} else {
         				$this->status = array(
@@ -1437,17 +1419,17 @@ class Orders extends Controller {
 	        	$action = $request->post('action');
 
 	        	//check if data exist
-	        	$getData = OrderModel::whereIn('id', $ids)->get();	
+	        	$getData = PhysicalOrderModel::whereIn('id', $ids)->get();	
 	        	
 	        	if (!empty($getData)) {
 
-	        		OrderItemModel::whereIn('order_id', $ids)->delete();
-	        		$isDeleted = OrderModel::whereIn('id', $ids)->delete();
+	        		PhysicalOrderItemModel::whereIn('order_id', $ids)->delete();
+	        		$isDeleted = PhysicalOrderModel::whereIn('id', $ids)->delete();
 	        		
 	        		if ($isDeleted) {
         				$this->status = array(
 							'error' => false,								
-							'msg' => 'Orders has been deleted successfully.'
+							'msg' => 'Physical Orders has been deleted successfully.'
 						);
         			} else {
         				$this->status = array(
@@ -1515,11 +1497,11 @@ class Orders extends Controller {
 	        	$action = $request->post('action');
 
 	        	//check if data exist
-	        	$getData = OrderModel::whereIn('id', $ids)->get();	
+	        	$getData = PhysicalOrderModel::whereIn('id', $ids)->get();	
 	        	
 	        	if (!empty($getData)) {
 
-	        		$isDeleted = OrderModel::whereIn('id', $ids)->update(['is_deleted' => 0]);
+	        		$isDeleted = PhysicalOrderModel::whereIn('id', $ids)->update(['is_deleted' => 0]);
 	        		
 	        		if ($isDeleted) {
         				$this->status = array(
@@ -2393,9 +2375,9 @@ class Orders extends Controller {
 
 				        		//send email
 								// $getOrder = OrderModel::
-								// join('product', 'orders.product_id', '=', 'product.id')
-								// ->select('orders.*', 'product.registered_hsn_code', 'product.unregistered_hsn_code')
-								// ->where('orders.id', $isOrderCreated->id)->first();
+								// join('product', 'physical_orders.product_id', '=', 'product.id')
+								// ->select('physical_orders.*', 'product.registered_hsn_code', 'product.unregistered_hsn_code')
+								// ->where('physical_orders.id', $isOrderCreated->id)->first();
 
 								// EmailSending::orderEmail($getOrder);
 								//EmailSending::orderEmailNew($isOrderCreated->id);
@@ -3081,9 +3063,9 @@ class Orders extends Controller {
 
 					        		//send email
 									// $getOrder = OrderModel::
-									// join('product', 'orders.product_id', '=', 'product.id')
-									// ->select('orders.*', 'product.registered_hsn_code', 'product.unregistered_hsn_code')
-									// ->where('orders.id', $isOrderCreated->id)->first();
+									// join('product', 'physical_orders.product_id', '=', 'product.id')
+									// ->select('physical_orders.*', 'product.registered_hsn_code', 'product.unregistered_hsn_code')
+									// ->where('physical_orders.id', $isOrderCreated->id)->first();
 
 									// EmailSending::orderEmail($getOrder);
 									//EmailSending::orderEmailNew($getOrder->id);

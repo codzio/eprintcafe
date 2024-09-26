@@ -35,6 +35,7 @@ use App\Models\BarcodeModel;
 
 use App\Models\ContactModel;
 use App\Models\LandingPageEnquiryModel;
+use App\Models\WalletHistoryModel;
 
 use Ixudra\Curl\Facades\Curl;
 
@@ -68,13 +69,14 @@ class Upload extends Controller {
 
 		$cond = [
 			'product.is_active' => 1,
+			'product.product_type' => 'digital',
 			'cart.user_id' => $customerId
 		];
 
 		$getCartData = CartModel::join('product', 'cart.product_id', '=', 'product.id')
 		->where($cond)->select('cart.*', 'product.name', 'product.thumbnail_id')->orderBy('cart.id', 'desc')->get();
 
-		$productList = ProductModel::where(['is_active' => 1])->get();
+		$productList = ProductModel::where(['is_active' => 1, 'product_type' => 'digital'])->get();
 
 		//Get Customer Address
 		$customerAddress = CustomerAddressModel::where('user_id', $customerId)->first();
@@ -123,10 +125,10 @@ class Upload extends Controller {
 	        	$customerId = customerId();
 
 	        	//get default product (PDF Printing)
-	        	$productData = ProductModel::where(['is_active' => 1, 'slug' => 'pdf-printing'])->first();
+	        	$productData = ProductModel::where(['is_active' => 1, 'product_type' => 'digital', 'slug' => 'pdf-printing'])->first();
 
 	        	if (!empty($slug)) {
-	        		$productData = ProductModel::where(['is_active' => 1, 'slug' => $slug])->first();
+	        		$productData = ProductModel::where(['is_active' => 1, 'product_type' => 'digital', 'slug' => $slug])->first();
 	        	}
 
 	        	if (!empty($productData)) {
@@ -226,6 +228,7 @@ class Upload extends Controller {
 			   				'amount' => $amount,
 			   				'file_path' => $destinationPath,
 			   				'file_name' => $finalName,
+							'product_type' => 'digital',
 			   			];
 
 			   			CartModel::create($obj);
@@ -276,14 +279,15 @@ class Upload extends Controller {
 
 			$cond = [
 				'id' => $cartId,
-				'user_id' => $customerData->id
+				'user_id' => $customerData->id,
+				'product_type' => 'digital',
 			];
 
 			//check if cart item exist
 			$getCartData = CartModel::where($cond)->first();
 
 			//check product exist
-			$getProductData = ProductModel::where(['id' => $productId, 'is_active' => 1])->first();
+			$getProductData = ProductModel::where(['id' => $productId, 'product_type' => 'digital', 'is_active' => 1])->first();
 
 			if (!empty($getCartData) && !empty($getProductData)) {
 				
@@ -533,12 +537,12 @@ class Upload extends Controller {
 	        	$cartId = $request->post('cartId');
 
 	        	//get default product (PDF Printing)
-	        	$productData = ProductModel::where(['is_active' => 1, 'id' => $product])->first();
+	        	$productData = ProductModel::where(['is_active' => 1, 'product_type' => 'digital', 'id' => $product])->first();
 
 	        	if (!empty($productData)) {
 
 	        		//check cart id
-	        		$isCartDataExist = CartModel::where(['id' => $cartId, 'user_id' => $customerId])->first();
+	        		$isCartDataExist = CartModel::where(['id' => $cartId, 'product_type' => 'digital', 'user_id' => $customerId])->first();
 
 	        		if (!empty($isCartDataExist)) {
 	        			
@@ -563,7 +567,8 @@ class Upload extends Controller {
 			   				'qty' => $noOfPages,
 			   				'no_of_copies' => $noOfCopies,
 			   				'amount' => $amount,
-			   				'remark' => $remark
+			   				'remark' => $remark,
+							'product_type' => 'digital',
 			   			];
 
 			   			$isUpdated = CartModel::where('id', $cartId)->update($obj);
@@ -629,9 +634,11 @@ class Upload extends Controller {
     		Session::forget('documents');
 
 			$customerId = customerId();
+			$customerData = customerData();
 
 			$cond = [
 				'product.is_active' => 1,
+				'product.product_type' => 'digital',
 				'cart.user_id' => $customerId
 			];
 
@@ -709,6 +716,19 @@ class Upload extends Controller {
     			$paidAmount += $gstCharges;
     		}
 
+			$walletAmount = $customerData->wallet_amount;
+			$usedWalletAmount = 0;
+
+			if($walletAmount) {
+				if($paidAmount >= $walletAmount) {
+					$usedWalletAmount = $walletAmount;
+					$paidAmount = $paidAmount - $walletAmount;
+				} else {
+					$usedWalletAmount = $paidAmount;
+					$paidAmount = 0;
+				}
+			}
+
     		$template = view('frontend/components/review-order', compact('cartData', 'customerAddress'))->render();
 
     		$data = [
@@ -719,6 +739,7 @@ class Upload extends Controller {
     			'subTotal' => floatval(number_format($priceData->total-$priceData->shipping-$priceData->discount, 2, '.', '')),
     			'packagingCharges' => $packagingCharges,
     			'gstCharges' => $gstCharges,
+				'usedWalletAmount' => floatval(number_format($usedWalletAmount, 2, '.', '')),
     			'paidAmount' => floatval(number_format($paidAmount, 2, '.', '')),
     			'error' => false,
     			'msg' => 'Data Fetched'
@@ -773,10 +794,12 @@ class Upload extends Controller {
 
 	        	$tempId = $request->cookie('tempUserId');
 				$customerId = customerId();
+				$customerData = customerData();
 
 				$cond = [
 					'product.is_active' => 1,
-					'cart.user_id' => $customerId
+					'cart.user_id' => $customerId,
+					'product.product_type' => 'digital',
 				];
 
 				$isExist = CartModel::join('product', 'cart.product_id', '=', 'product.id')
@@ -1077,11 +1100,25 @@ class Upload extends Controller {
 
 					        		$paidAmount = round($paidAmount, 2);
 
+									$walletAmount = $customerData->wallet_amount;
+									$usedWalletAmount = 0;
+
+									if($walletAmount) {
+										if($paidAmount >= $walletAmount) {
+											$usedWalletAmount = $walletAmount;
+											$paidAmount = $paidAmount - $walletAmount;
+										} else {
+											$usedWalletAmount = $paidAmount;
+											$paidAmount = 0;
+										}
+									}
+
 					            	$this->status = array(
 										'error' => false,
 										'discount' => $discount,
 										'grandTotal' => $grandTotal,
 										'priceData' => $priceData,
+										'usedWalletAmount' => $usedWalletAmount,
 										'paidAmount' => $paidAmount,
 										'gstCharges' => $gstCharges,
 										'packagingCharges' => $packagingCharges,
@@ -1209,6 +1246,8 @@ class Upload extends Controller {
 	        		
 	        		//check if customer address exist
 	        		$userId = customerId();
+					$customerData = customerData();
+
 	        		$getCustomerAdd = CustomerAddressModel::where('user_id', $userId)->latest()->first();
 
 	        		//Remove shipping session
@@ -1486,153 +1525,388 @@ class Upload extends Controller {
 
 	        		$paymentMethod = $request->post('paymentMethod');
 
-	        		if ($paymentMethod == 'phonepe') {
+					$walletAmount = $customerData->wallet_amount;
+					$usedWalletAmount = 0;
 
-	        			//$paidAmount = 1;
+					if($walletAmount) {
+						if($paidAmount >= $walletAmount) {
+							$usedWalletAmount = $walletAmount;
+							$paidAmount = $paidAmount - $walletAmount;
+						} else {
+							$usedWalletAmount = $paidAmount;
+							$paidAmount = 0;
+						}
+					}
 
-	        			$paymentObj = array (
-				            'merchantId' => env("PROD_MERCHANT_ID"),
-				            'merchantTransactionId' => $transactionId,
-				            'merchantUserId' => 'MUID123',
-				            'amount' => $paidAmount*100,
-				            'redirectUrl' => route('response'),
-				            'redirectMode' => 'REDIRECT',
-				            'callbackUrl' => route('response'),
-				            'mobileNumber' => $request->post('shippingPhone'),
-				            'paymentInstrument' => array (
-				            	'type' => 'PAY_PAGE',
-				            ),
-				        );
+					if($paidAmount) {
+						if ($paymentMethod == 'phonepe') {
 
-	        			$encode = base64_encode(json_encode($paymentObj));
-				        $saltKey = env('PROD_MERCHANT_KEY');
-	        			$saltIndex = 1;
-
-	        			$string = $encode.'/pg/v1/pay'.$saltKey;
-	        			$sha256 = hash('sha256',$string);
-	        			$finalXHeader = $sha256.'###'.$saltIndex;
-	        			$url = env('PROD_URL')."/pg/v1/pay";
-
-	        			$response = Curl::to($url)
-		                ->withHeader('Content-Type:application/json')
-		                ->withHeader('X-VERIFY:'.$finalXHeader)
-		                ->withData(json_encode(['request' => $encode]))
-		                ->post();
-
-		                $rData = json_decode($response);
-
-		                if (isset($rData->success) && $rData->success) {
-
-		        			Session::forget('paymentSess');
-
-		        			//create session for payment initiated
-		        			$paymentInitObj = [
-			        			'transactionId' => $transactionId,
-			        			'paidAmount' => $paidAmount,
-			        		];
-
-			        		$request->session()->put('paymentSess', $paymentInitObj);
-		        			
-		        			$this->status = array(
+							//$paidAmount = 1;
+	
+							$paymentObj = array (
+								'merchantId' => env("PROD_MERCHANT_ID"),
+								'merchantTransactionId' => $transactionId,
+								'merchantUserId' => 'MUID123',
+								'amount' => $paidAmount*100,
+								'redirectUrl' => route('response'),
+								'redirectMode' => 'REDIRECT',
+								'callbackUrl' => route('response'),
+								'mobileNumber' => $request->post('shippingPhone'),
+								'paymentInstrument' => array (
+									'type' => 'PAY_PAGE',
+								),
+							);
+	
+							$encode = base64_encode(json_encode($paymentObj));
+							$saltKey = env('PROD_MERCHANT_KEY');
+							$saltIndex = 1;
+	
+							$string = $encode.'/pg/v1/pay'.$saltKey;
+							$sha256 = hash('sha256',$string);
+							$finalXHeader = $sha256.'###'.$saltIndex;
+							$url = env('PROD_URL')."/pg/v1/pay";
+	
+							$response = Curl::to($url)
+							->withHeader('Content-Type:application/json')
+							->withHeader('X-VERIFY:'.$finalXHeader)
+							->withData(json_encode(['request' => $encode]))
+							->post();
+	
+							$rData = json_decode($response);
+	
+							if (isset($rData->success) && $rData->success) {
+	
+								Session::forget('paymentSess');
+	
+								//create session for payment initiated
+								$paymentInitObj = [
+									'transactionId' => $transactionId,
+									'paidAmount' => $paidAmount,
+								];
+	
+								$request->session()->put('paymentSess', $paymentInitObj);
+								
+								$this->status = array(
+									'error' => false,
+									'redirect' => $rData->data->instrumentResponse->redirectInfo->url,
+									'msg' => 'Payment Initiated',
+									'paymentMethod' => 'phonepe',
+								);
+	
+							} else {
+								$this->status = array(
+									'error' => true,
+									'eType' => 'final',
+									'msg' => 'Something went wrong while initiating payment.'
+								);
+							}
+							
+						} else {
+	
+							$MERCHANT_KEY = "q8S6BB"; // TEST MERCHANT KEY
+							$SALT = "FwyslfXn3zDZtugwyHCiZu70zDmariAM"; // TEST SALT
+	
+							//$PAYU_BASE_URL = "https://test.payu.in";
+							$PAYU_BASE_URL = "https://secure.payu.in"; // PRODUCATION
+	
+							$name = $request->post('shippingName');
+							$successURL = route('paymentResponse');
+							$failURL = route('paymentFailPage');
+							$email = $request->post('shippingEmail');
+	
+							//$productName = ProductModel::where('id', getCartProductId())->value('name');
+							$productName = 'eprintcafe';
+	
+							$action = '';
+							//$txnid = substr(hash('sha256', mt_rand() . microtime()), 0, 20);
+							$txnid = $transactionId;
+							$posted = array();
+							$posted = array(
+								'key' => $MERCHANT_KEY,
+								'txnid' => $txnid,
+								'amount' => $paidAmount,
+								'productinfo' => $productName,
+								'firstname' => $name,
+								'email' => $email,
+								'surl' => $successURL,
+								'furl' => $failURL,
+								'service_provider' => 'payu_paisa',
+							);
+	
+							if(empty($posted['txnid'])) {
+								// $txnid = substr(hash('sha256', mt_rand() . microtime()), 0, 20);
+								$txnid = uniqid();
+							}  else{
+								$txnid = $posted['txnid'];
+							}
+	
+							$hash = '';
+							$hashSequence = "key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|udf6|udf7|udf8|udf9|udf10";
+	
+							if(empty($posted['hash']) && sizeof($posted) > 0) {
+								$hashVarsSeq = explode('|', $hashSequence);
+								$hash_string = '';  
+								foreach($hashVarsSeq as $hash_var) {
+									$hash_string .= isset($posted[$hash_var]) ? $posted[$hash_var] : '';
+									$hash_string .= '|';
+								}
+								$hash_string .= $SALT;
+	
+								$hash = strtolower(hash('sha512', $hash_string));
+								$action = $PAYU_BASE_URL . '/_payment';
+							} elseif(!empty($posted['hash'])) {
+								$hash = $posted['hash'];
+								$action = $PAYU_BASE_URL . '/_payment';
+							}
+	
+							Session::forget('paymentSess');
+	
+							//create session for payment initiated
+							$paymentInitObj = [
+								'action' => $action,
+								'hash' => $hash,
+								'MERCHANT_KEY' => $MERCHANT_KEY,
+								'txnid' => $txnid,
+								'successURL' => $successURL,
+								'failURL' => $failURL,
+								'name' => $name,
+								'email' => $email,
+								'amount' => $paidAmount,
+								'productinfo' => $productName,
+							];
+	
+							$request->session()->put('paymentSess', $paymentInitObj);
+							
+							$this->status = array(
 								'error' => false,
-								'redirect' => $rData->data->instrumentResponse->redirectInfo->url,
+								// 'redirect' => $rData->data->instrumentResponse->redirectInfo->url,
+								'redirect' => route('payumoneyPage'),
 								'msg' => 'Payment Initiated',
-								'paymentMethod' => 'phonepe',
+								'paymentMethod' => 'payu',
 							);
+	
+						}
+					} else {
+						//Full Wallet Redeem
 
-		        		} else {
-		        			$this->status = array(
-								'error' => true,
-								'eType' => 'final',
-								'msg' => 'Something went wrong while initiating payment.'
-							);
-		        		}
-	        			
-	        		} else {
+						$paymentMethod = "Wallet";
+						
+						$productPrice = productPriceMulti();
+						$couponCode = null;
+						$discount = 0;
 
-	        			$MERCHANT_KEY = "q8S6BB"; // TEST MERCHANT KEY
-	        			$SALT = "FwyslfXn3zDZtugwyHCiZu70zDmariAM"; // TEST SALT
+						$couponData = Session::get('couponSess');
 
-	        			//$PAYU_BASE_URL = "https://test.payu.in";
-	        			$PAYU_BASE_URL = "https://secure.payu.in"; // PRODUCATION
+						if (!empty($couponData)) {
+							$couponCode = $couponData['coupon_code'];
+							$discount = $couponData['discount'];
+						}	 
 
-	        			$name = $request->post('shippingName');
-				        $successURL = route('paymentResponse');
-				        $failURL = route('paymentFailPage');
-				        $email = $request->post('shippingEmail');
+						$shipping = 0;
 
-				        //$productName = ProductModel::where('id', getCartProductId())->value('name');
-				        $productName = 'eprintcafe';
+						$shippingData = Session::get('shippingSess');
+						if (!empty($shippingData)) {
+							$shipping = $shippingData['shipping'];
+						}
 
-				        $action = '';
-				        //$txnid = substr(hash('sha256', mt_rand() . microtime()), 0, 20);
-				        $txnid = $transactionId;
-				        $posted = array();
-				        $posted = array(
-				            'key' => $MERCHANT_KEY,
-				            'txnid' => $txnid,
-				            'amount' => $paidAmount,
-				            'productinfo' => $productName,
-				            'firstname' => $name,
-				            'email' => $email,
-				            'surl' => $successURL,
-				            'furl' => $failURL,
-				            'service_provider' => 'payu_paisa',
-				        );
+						$remark = null;
+						$remarkData = Session::get('remarkSess');
+						if (!empty($remarkData)) {
+							$remark = $remarkData['remark'];
+						}
 
-				        if(empty($posted['txnid'])) {
-				            // $txnid = substr(hash('sha256', mt_rand() . microtime()), 0, 20);
-				            $txnid = uniqid();
-				        }  else{
-				            $txnid = $posted['txnid'];
-				        }
+						$wetransferLink = null;
+						$wetransferLinkData = Session::get('wetransferLinkSess');
+						if (!empty($wetransferLinkData)) {
+							$wetransferLink = $wetransferLinkData['wetransferLink'];
+						}
 
-				        $hash = '';
-				        $hashSequence = "key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|udf6|udf7|udf8|udf9|udf10";
+						$courier = null;
+						$courierData = Session::get('courierSess');
+						if (!empty($courierData)) {
+							$courier = $courierData['courier'];
+						}
 
-				        if(empty($posted['hash']) && sizeof($posted) > 0) {
-				            $hashVarsSeq = explode('|', $hashSequence);
-				            $hash_string = '';  
-				            foreach($hashVarsSeq as $hash_var) {
-				                $hash_string .= isset($posted[$hash_var]) ? $posted[$hash_var] : '';
-				                $hash_string .= '|';
-				            }
-				            $hash_string .= $SALT;
+						$customerAdd = CustomerAddressModel::where('user_id', customerId())->first();
 
-				            $hash = strtolower(hash('sha512', $hash_string));
-				            $action = $PAYU_BASE_URL . '/_payment';
-				        } elseif(!empty($posted['hash'])) {
-				            $hash = $posted['hash'];
-				            $action = $PAYU_BASE_URL . '/_payment';
-				        }
+						$myCustomerAdd = [];
 
-				        Session::forget('paymentSess');
+						if (!empty($customerAdd)) {
+							$myCustomerAdd = json_encode($customerAdd->toArray());
+						} else {
+							$myCustomerAdd = json_encode($myCustomerAdd);
+						}
 
-	        			//create session for payment initiated
-	        			$paymentInitObj = [
-	        				'action' => $action,
-	        				'hash' => $hash,
-	        				'MERCHANT_KEY' => $MERCHANT_KEY,
-	        				'txnid' => $txnid,
-	        				'successURL' => $successURL,
-	        				'failURL' => $failURL,
-	        				'name' => $name,
-	        				'email' => $email,
-	        				'amount' => $paidAmount,
-	        				'productinfo' => $productName,
-		        		];
+						$getCartData = CartModel::where('user_id', customerId())->where('product_type', 'digital')
+						->orderBy('cart.id', 'desc')
+						->get();
 
-		        		$request->session()->put('paymentSess', $paymentInitObj);
-	        			
-	        			$this->status = array(
-							'error' => false,
-							// 'redirect' => $rData->data->instrumentResponse->redirectInfo->url,
-							'redirect' => route('payumoneyPage'),
-							'msg' => 'Payment Initiated',
-							'paymentMethod' => 'payu',
+						$getDocumentLink = CartModel::where('user_id', customerId())->take(1)->value('document_link');
+						
+						$paidAmount = $productPrice->subTotal;
+						$packagingCharges = 0;
+						if (setting('packaging_charges')) {
+							$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+							$paidAmount += $packagingCharges;
+						}
+
+						$paidAmount += $productPrice->shipping;
+						$paidAmount -= $productPrice->discount;
+
+						//add 5% GST
+						$gstCharges = 0;
+						if (setting('gst')) {
+							$gstCharges = ($paidAmount*setting('gst'))/100;
+							$gstCharges = round($gstCharges, 2);
+							$paidAmount += $gstCharges;
+						}
+
+						$walletAmount = $customerData->wallet_amount;
+						$usedWalletAmount = 0;
+
+						if($walletAmount) {
+							if($paidAmount >= $walletAmount) {
+								$usedWalletAmount = $walletAmount;
+								$paidAmount = $paidAmount - $walletAmount;
+							} else {
+								$usedWalletAmount = $paidAmount;
+								$paidAmount = 0;
+							}
+						}
+						
+						$orderObj = array(
+							'order_id' => $transactionId,
+							'user_id' => customerId(),
+							// 'product_id' => getCartProductId(),
+							// 'product_name' => $productName,
+							// 'product_details' => json_encode(productSpec(getCartId())),
+							// 'weight_details' => json_encode(cartWeight()),
+							'coupon_code' => $couponCode,
+							'discount' => $discount,
+							'shipping' => $shipping,
+							// 'paid_amount' => ceil($productPrice->total),
+							// 'paid_amount' => $productPrice->total,
+							'packaging_charges' => $packagingCharges,
+							'gst_charges' => $gstCharges,
+							'wallet_amount' => $usedWalletAmount,
+							'paid_amount' => $paidAmount,
+							// 'price_details' => json_encode($productPrice),
+							// 'transaction_details' => json_encode($_POST),
+							'transaction_details' => null,
+							// 'customer_address' => json_encode($customerAdd->toArray()),
+							'customer_address' => $myCustomerAdd,
+							'document_link' => $getDocumentLink,
+							'remark' => $remark,
+							'wetransfer_link' => $wetransferLink,
+							'courier' => $courier,
+							'payment_method' => 'Wallet',
+							// 'qty' => $getCartData->qty,
+							// 'no_of_copies' => $getCartData->no_of_copies,
 						);
 
-	        		}
+						$isOrderCreated = OrderModel::create($orderObj);
+
+						if ($isOrderCreated) {
+
+							$orderId = $isOrderCreated->id;
+
+							//Deduct wallet amount
+							CustomerModel::where('id', customerId())->decrement('wallet_amount', $usedWalletAmount);
+
+							$obj = [
+								'user_id' => customerId(),
+								'debit' => $usedWalletAmount,
+								'narration' => 'Wallet amount used for order id '.strtoupper($transactionId)
+							];
+			
+							$isAdded = WalletHistoryModel::create($obj);
+
+							//update barcode once used
+							// if (!empty($barcode)) {
+							// 	BarcodeModel::where('id', $barcode->id)->update(['is_used' => 1]);
+							// }
+		
+							foreach ($getCartData as $cartData) {
+		
+								$productName = ProductModel::where('id', $cartData->product_id)->value('name');
+								
+								$orderItemObj = array(
+									'order_id' => $orderId,
+									'product_id' => $cartData->product_id,
+									'product_name' => $productName,
+									'qty' => $cartData->qty,
+									'no_of_copies' => $cartData->no_of_copies,
+									'product_details' => json_encode(productSpec($cartData->id)),
+									'weight_details' => json_encode(cartWeightSingle($cartData->id)),
+									'price_details' => json_encode(productSinglePrice($cartData->product_id)),
+									'qty' => $cartData->qty,
+									'no_of_copies' => $cartData->no_of_copies,
+									'file_path' => $cartData->file_path,
+									'file_name' => $cartData->file_name,
+									'remark' => $cartData->remark,
+								);
+		
+								OrderItemModel::create($orderItemObj);
+		
+							}
+		
+							$getCustomer = CustomerModel::where('id', customerId())->first();
+		
+							//Remove Cart Data
+							CartModel::where('user_id', customerId())->where('product_type', 'digital')->delete();
+		
+							//send SMS
+							SmsSending::orderPlaced($getCustomer->phone, $getCustomer->name);
+		
+							//send email
+							//$orderId = 8;
+							// $getOrder = OrderModel::
+							// join('product', 'orders.product_id', '=', 'product.id')
+							// ->select('orders.*', 'product.registered_hsn_code', 'product.unregistered_hsn_code')
+							// ->where('orders.id', $isOrderCreated->id)->first();
+		
+							// EmailSending::orderEmail($getOrder);
+							
+							// Session::forget('shippingSess');
+							// Session::forget('couponSess');
+							// Session::forget('paymentSess');
+							// Session::forget('documents');
+		
+							EmailSending::orderEmailNew($orderId);
+						
+							Session::forget('shippingSess');
+							Session::forget('couponSess');
+							Session::forget('paymentSess');
+							Session::forget('documents');
+							Session::forget('remarkSess');
+							Session::forget('wetransferLinkSess');
+							Session::forget('courierSess');
+		
+							//return redirect()->route('thankyouPage', ['amount' => $walletAmount, 'transactionId' => $transactionId]);
+
+							$this->status = array(
+								'error' => false,
+								'redirect' => route('thankyouPage', ['amount' => $walletAmount, 'transactionId' => $transactionId]),
+							);
+		
+						} else {
+		
+							Session::forget('shippingSess');
+							Session::forget('couponSess');
+							Session::forget('paymentSess');
+							Session::forget('documents');
+							Session::forget('remarkSess');
+							Session::forget('wetransferLinkSess');
+							Session::forget('courierSess');
+		
+							$this->status = array(
+								'error' => true,
+								'eType' => 'final',
+								'msg' => 'Something went wrong'
+							);
+						}
+
+					}
 
 	                // // Log information
 					// Log::info('API Host: ' . $url);

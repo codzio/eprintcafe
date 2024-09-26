@@ -32,12 +32,10 @@ class Cart extends Controller {
 
 	public function index(Request $request) {
 
-		return redirect()->route('uploadPage');
-
 		$tempId = $request->cookie('tempUserId');
 		$userId = customerId();
 
-		$cond = ['product.is_active' => 1];
+		$cond = ['product.is_active' => 1, 'product.product_type' => 'physical'];
 
 		if (!empty($userId)) {
 			$cond['cart.user_id'] = $userId;
@@ -47,18 +45,17 @@ class Cart extends Controller {
 
 		$getCartData = CartModel::join('product', 'cart.product_id', '=', 'product.id')
 		->where($cond)
-		->select('cart.*', 'product.name', 'product.thumbnail_id')
+		->select('cart.*', 'product.name', 'product.thumbnail_id', 'mrp', 'sp')
 		->orderBy('cart.id', 'desc')
-		// ->take(1)
 		->get();
 
 		if (!empty($getCartData) && $getCartData->count()) {
 
 			//remove promo
-		    Session::forget('couponSess');
+		    Session::forget('physicalCouponSess');
 
 		    //remove shipping
-		    Session::forget('shippingSess');
+		    Session::forget('physicalShippingSess');
 		
 			$data = array(
 				'title' => 'Cart',
@@ -289,11 +286,118 @@ class Cart extends Controller {
 		return response($this->status);
 	}
 
+	public function doPhysicalAddToCart(Request $request) {
+		if ($request->ajax()) {
+
+			//check session
+			if (isPhysicalPaymentInit()) {
+				
+				$this->status = array(
+					'error' => true,
+					'eType' => 'final',
+					'msg' => 'Payment Initiated & cannot add to cart.'
+				);
+
+				return response($this->status);
+				die();
+
+			}
+
+			$validator = Validator::make($request->post(), [
+			    'productId' => 'required|numeric',
+			    'qty' => 'required|numeric|min:1',
+			]);
+
+	        if ($validator->fails()) {
+	            
+	            $errors = $validator->errors()->getMessages();
+
+	            $this->status = array(
+					'error' => true,
+					'eType' => 'field',
+					'errors' => $errors,
+					'msg' => 'Validation failed'
+				);
+
+	        } else {
+
+	        	$productId = $request->post('productId');
+	        	$qty = $request->post('qty');
+
+	        	//check if product exist for delivery
+	        	$isProductExist = ProductModel::where(['id' => $productId, 'is_active' => 1, 'product_type' => 'physical'])->first();
+
+	        	if (!empty($isProductExist) && $isProductExist->count()) {
+	        
+	        		$tempId = $request->cookie('tempUserId');
+					$customerId = customerId();
+
+					$cartObj = [
+						'temp_id' => $tempId,
+						'user_id' => $customerId,
+						'product_id' => $productId,
+						'qty' => $qty,
+						'product_type' => 'physical'
+					];
+
+					Session::forget('physicalShippingSess');
+					Session::forget('physicalCouponSess');
+					Session::forget('physicalPaymentSess');
+
+					//check whether cart need to update or delete
+					if (!empty($customerId)) {
+						$condition = ['user_id' => $customerId, 'product_id' => $productId];
+					} else {
+						$condition = ['temp_id' => $tempId, 'product_id' => $productId];
+					}
+
+					$isCartDataExist = CartModel::where($condition)->count();
+
+					if (!$isCartDataExist) {
+						$isAdded = CartModel::create($cartObj);
+					} else {
+						$isAdded = CartModel::where($condition)->update($cartObj);
+					}
+
+					if ($isAdded) {
+						$this->status = array(
+							'error' => false,
+							'msg' => 'The product has been added into the cart.'
+						);
+					} else {
+						$this->status = array(
+							'error' => true,
+							'eType' => 'final',
+							'msg' => 'Something went wrong.'
+						);
+					}
+
+	        	} else {
+	        		$this->status = array(
+						'error' => true,
+						'eType' => 'final',
+						'msg' => 'The product is not available.'
+					);
+	        	}
+
+	        }
+
+		} else {
+			$this->status = array(
+				'error' => true,
+				'eType' => 'final',
+				'msg' => 'Something went wrong'
+			);
+		}
+
+		return response($this->status);
+	}
+
 	public function doRemoveCartItem(Request $request) {
 		if ($request->ajax()) {
 
 			//check session
-			if (isPaymentInit()) {
+			if (isPhysicalPaymentInit()) {
 				
 				$this->status = array(
 					'error' => true,
@@ -324,18 +428,7 @@ class Cart extends Controller {
 
 	        	//get cart data
 	        	$cartId = $request->post('cartId');
-	        	$cartData = CartModel::where('id', $cartId)->first();
-
-	        	if (!empty($cartData)) {
-
-	        		//check if file name exist
-	        		if (!empty($cartData->file_name)) {
-	        			File::delete(public_path($cartData->file_path.'/'.$cartData->file_name));
-	        		}
-
-	        	}	        	
-
-	        	CartModel::where('id', $cartId)->delete();
+	        	$cartData = CartModel::where('id', $cartId)->where('product_type', 'physical')->delete();
 	        	
 	        	//remove other items
 	        	// if (customerId()) {
@@ -346,9 +439,9 @@ class Cart extends Controller {
 
 	        	//remove coupon && shipping
 	        	//Session::forget('documents');
-	        	Session::forget('shippingSess');
-        		Session::forget('couponSess');
-        		Session::forget('paymentSess');
+	        	Session::forget('physicalShippingSess');
+        		Session::forget('physicalCouponSess');
+        		Session::forget('physicalPaymentSess');
 
 	        	$this->status = array(
 					'error' => false,
@@ -372,7 +465,7 @@ class Cart extends Controller {
 		if ($request->ajax()) {
 
 			//check session
-			if (isPaymentInit()) {
+			if (isPhysicalPaymentInit()) {
 				
 				$this->status = array(
 					'error' => true,
@@ -386,8 +479,8 @@ class Cart extends Controller {
 			}
 
 			$validator = Validator::make($request->post(), [
-			    'qty' => 'required',
-			    'noOfCopies' => 'required',
+			    'qty.*' => 'required|numeric|gt:0',
+			    // 'noOfCopies' => 'required',
 			]);
 
 	        if ($validator->fails()) {
@@ -406,6 +499,8 @@ class Cart extends Controller {
 	        	$tempId = $request->cookie('tempUserId');
 				$userId = customerId();
 
+				$cond['cart.product_type'] = 'physical';
+
 				if (!empty($userId)) {
 					$cond['cart.user_id'] = $userId;
 				} else {
@@ -413,16 +508,17 @@ class Cart extends Controller {
 				}
 
 				$qty = $request->post('qty');
-				$noOfCopies = $request->post('noOfCopies');
+				// $noOfCopies = $request->post('noOfCopies');
 
 				foreach ($qty as $cartId => $value) {
 					$cond['cart.id'] = $cartId;
 
 					$cartData = CartModel::where($cond)->first();
 
-					$amount = productSinglePrice($cartData->product_id, $cartData->user_id)->total;
+					// $amount = productSinglePrice($cartData->product_id, $cartData->user_id)->total;
 
-					CartModel::where($cond)->update(['qty' => $value, 'no_of_copies' => $noOfCopies[$cartId], 'amount' => $amount]);	
+					// CartModel::where($cond)->update(['qty' => $value, 'no_of_copies' => $noOfCopies[$cartId], 'amount' => $amount]);	
+					CartModel::where($cond)->update(['qty' => $value]);	
 				}
 
 	        	//remove coupon && shipping

@@ -86,7 +86,7 @@ data-kt-drawer="true" data-kt-drawer-name="app-sidebar" data-kt-drawer-activate=
                 @endif
 
                 @can('read', 'products')
-                <div  data-kt-menu-trigger="click"  class="menu-item here {{ ($menu == 'products' || $menu == 'category' || $menu == 'paper-size' || $menu == 'paper-type' || $menu == 'binding' || $menu == 'lamination' || $menu == 'cover' || $menu == 'gsm' || $menu == 'product')? 'show':'' }} menu-accordion" >
+                <div  data-kt-menu-trigger="click"  class="menu-item here {{ ($menu == 'digital-product' || $menu == 'physical-product' || $menu == 'category' || $menu == 'paper-size' || $menu == 'paper-type' || $menu == 'binding' || $menu == 'lamination' || $menu == 'cover' || $menu == 'gsm' || $menu == 'product')? 'show':'' }} menu-accordion" >
                     
                     <span class="menu-link" >
                         <span  class="menu-icon" >
@@ -168,7 +168,16 @@ data-kt-drawer="true" data-kt-drawer-name="app-sidebar" data-kt-drawer-activate=
                                 <span  class="menu-bullet" >
                                     <span class="bullet bullet-dot"></span>
                                 </span>
-                                <span  class="menu-title">Product</span>
+                                <span  class="menu-title">Digital Product</span>
+                            </a>
+                            @endcan
+
+                            @can('read', 'product')
+                            <a class="menu-link"  href="{{ route('adminPhysicalProduct') }}" >
+                                <span  class="menu-bullet" >
+                                    <span class="bullet bullet-dot"></span>
+                                </span>
+                                <span  class="menu-title">Physical Product</span>
                             </a>
                             @endcan
 
@@ -370,6 +379,43 @@ data-kt-drawer="true" data-kt-drawer-name="app-sidebar" data-kt-drawer-activate=
 
                             @can('read', 'orders')
                             <a class="menu-link"  href="{{ route('adminDeletedOrders') }}" >
+                                <span  class="menu-bullet" >
+                                    <span class="bullet bullet-dot"></span>
+                                </span>
+                                <span  class="menu-title">Deleted Orders</span>
+                            </a>
+                            @endcan
+
+                        </div>
+                    </div>
+                </div>
+                @endcan
+
+                @can('read', 'orders')
+                <div  data-kt-menu-trigger="click"  class="menu-item here {{ $menu == 'physical-orders'? 'show':'' }} menu-accordion" >
+                    <span class="menu-link" >
+                        <span  class="menu-icon" >
+                            <i class="ki-outline ki-home-2 fs-2"></i>
+                        </span>
+                        <span  class="menu-title">Physical Orders</span>
+                        <span  class="menu-arrow"></span>
+                    </span>
+
+
+                    <div  class="menu-sub menu-sub-accordion" >
+                        <div  class="menu-item" >
+                            
+                            @can('read', 'orders')
+                            <a class="menu-link"  href="{{ route('adminPhysicalOrders') }}" >
+                                <span  class="menu-bullet" >
+                                    <span class="bullet bullet-dot"></span>
+                                </span>
+                                <span  class="menu-title">Orders</span>
+                            </a>
+                            @endcan
+
+                            @can('read', 'orders')
+                            <a class="menu-link"  href="{{ route('adminDeletedPhysicalOrders') }}" >
                                 <span  class="menu-bullet" >
                                     <span class="bullet bullet-dot"></span>
                                 </span>

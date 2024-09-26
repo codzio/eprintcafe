@@ -916,7 +916,7 @@ function productPriceMulti() {
 	$tempId = Request::cookie('tempUserId');
 	$userId = customerId();
 
-	$cond = ['product.is_active' => 1];
+	$cond = ['product.is_active' => 1, 'product.product_type' => 'digital'];
 	if (!empty($userId)) {
 		$cond['cart.user_id'] = $userId;
 	} else {
@@ -1087,6 +1087,87 @@ function productPriceMulti() {
 
 }
 
+function physicalProductPriceMulti() {
+
+	$tempId = Request::cookie('tempUserId');
+	$userId = customerId();
+
+	$cond = ['product.is_active' => 1, 'product.product_type' => 'physical'];
+	if (!empty($userId)) {
+		$cond['cart.user_id'] = $userId;
+	} else {
+		$cond['cart.temp_id'] = $tempId;
+	}
+
+	$getCartData = CartModel::join('product', 'cart.product_id', '=', 'product.id')
+		->where($cond)
+		->select('cart.*', 'product.name', 'product.thumbnail_id', 'mrp', 'sp')
+		->orderBy('cart.id', 'desc')
+		->get();
+
+	if (!empty($getCartData)) {
+
+		$data = [
+			'price' => 0,
+			'shipping' => 0,
+			'discount' => 0,
+			'subTotal' => 0,
+			'total' => 0
+		];
+			
+		foreach ($getCartData as $cartData) {
+			
+			$productId = $cartData->product_id;
+
+			$per_sheet_weight = 0;
+			$paper_type_price = 0;
+
+			// $data['per_sheet_weight'] += $per_sheet_weight;
+			// $data['paper_type_price'] += $paper_type_price;
+
+			$price = $cartData->mrp;
+
+			if(!empty($cartData->sp) && $cartData->mrp > $cartData->sp) {
+				$price = $cartData->sp;
+			}
+
+			$data['price'] = $price;
+			$qty = $cartData->qty;
+
+			$getPriceCal = (($price*$cartData->qty));
+			$data['subTotal'] += $getPriceCal;
+
+		}
+
+		$getCouponData = Session::get('physicalCouponSess');
+
+		$discount = 0;
+
+		if (!empty($getCouponData)) {
+			$discount = $getCouponData['discount'];
+		}
+
+		$data['discount'] = $discount;
+
+		//Shipping
+		$shipping = 0;
+		$getShippingData = Session::get('physicalShippingSess');
+
+		if (!empty($getShippingData)) {
+			$shipping = $getShippingData['shipping'];
+		}
+
+		$data['shipping'] = $shipping;
+
+		$data['total'] = round(($data['subTotal']-$data['discount'])+$data['shipping'], 2);
+		return (object) $data;
+
+	} else {
+		return false;
+	}
+
+}
+
 function productSinglePriceForAmount($productId, $paperSizeId, $paperGsmId, $paperTypeId, $printSide, $color, $bindingId, $laminationId, $coverId, $qty, $noOfCopies) {
 
 	$data = [
@@ -1205,7 +1286,7 @@ function productSinglePriceForAmount($productId, $paperSizeId, $paperGsmId, $pap
 
 function productSinglePrice($productId, $getUserId=null) {
 
-	$cond = ['product.is_active' => 1, 'cart.product_id' => $productId];
+	$cond = ['product.is_active' => 1, 'cart.product_id' => $productId, 'cart.product_type' => 'digital'];
 
 	if (!empty($getUserId)) {
 		$userId = $getUserId;
@@ -2055,7 +2136,7 @@ function productPriceForCustomOrderMulti($customerId) {
 	];
 
 	$userId = $customerId;
-	$cond = ['product.is_active' => 1, 'custom_cart.user_id' => $userId];
+	$cond = ['product.is_active' => 1, 'custom_cart.user_id' => $userId, 'product.product_type' => 'digital'];
 
 	$getCartData = CustomCartModel::join('product', 'custom_cart.product_id', '=', 'product.id')
 		->where($cond)
@@ -2223,7 +2304,7 @@ function productPriceForSaveCustomOrderMulti($orderId) {
 		'total' => 0
 	];
 
-	$cond = ['product.is_active' => 1, 'order_items.order_id' => $orderId];
+	$cond = ['product.is_active' => 1, 'order_items.order_id' => $orderId, 'product.product_type' => 'digital'];
 
 	$getOrderData = OrderModel::where('id', $orderId)->first(); 
 
@@ -2541,7 +2622,7 @@ function cartWeightMulti() {
 	$tempId = Request::cookie('tempUserId');
 	$userId = customerId();
 
-	$cond = ['product.is_active' => 1];
+	$cond = ['product.is_active' => 1, 'product.product_type' => 'digital'];
 	if (!empty($userId)) {
 		$cond['cart.user_id'] = $userId;
 	} else {
@@ -2662,7 +2743,7 @@ function cartWeightForCustomOrderMulti($customerId) {
 
 	$userId = $customerId;
 
-	$cond = ['product.is_active' => 1, 'custom_cart.user_id' => $userId];
+	$cond = ['product.is_active' => 1, 'custom_cart.user_id' => $userId, 'product.product_type' => 'digital'];
 
 	$getCartData = CustomCartModel::join('product', 'custom_cart.product_id', '=', 'product.id')
 	->where($cond)
@@ -2736,7 +2817,7 @@ function cartWeightForCustomOrderMulti($customerId) {
 
 function cartWeightForSaveCustomOrderMulti($orderId) {
 
-	$cond = ['product.is_active' => 1, 'order_items.order_id' => $orderId];
+	$cond = ['product.is_active' => 1, 'order_items.order_id' => $orderId, 'product.product_type' => 'digital'];
 
 	$getCartData = OrderItemModel::join('product', 'order_items.product_id', '=', 'product.id')
 	->where($cond)
@@ -2857,6 +2938,16 @@ function customerData($col='') {
 
 function isPaymentInit() {
 	$isPaymentInit = Session::get('paymentSess');
+
+	if (!empty($isPaymentInit)) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+function isPhysicalPaymentInit() {
+	$isPaymentInit = Session::get('physicalPaymentSess');
 
 	if (!empty($isPaymentInit)) {
 		return true;

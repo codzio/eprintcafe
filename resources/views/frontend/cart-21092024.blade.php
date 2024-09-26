@@ -564,9 +564,9 @@
       <div class="shopping-cart text-center">
         <div class="cart-head">
           <h6>PRODUCTS</h6>
-          <h6>PRICE</h6>
-          <h6>QUANTITY</h6>
-          <h6>TOTAL</h6>
+              <h6>PRICE</h6>
+              <h6>No Of Pages/Copies</h6>
+              <h6>TOTAL</h6>
         </div>
         
           <div class="detail_card_row  shopping-cart small-cart">
@@ -577,12 +577,9 @@
                     $price = 0;
                     $productId = $cart->product_id;
 
-                    if(!empty($cart->sp) && $cart->mrp > $cart->sp) {
-                      $price = $cart->sp;
-                    } else {
-                      $price = $cart->mrp;
+                    if(isset(productSinglePrice($productId)->price)) {
+                      $price = productSinglePrice($productId)->price;
                     }
-                    
                   @endphp
 
                   <div class="row cart-details">
@@ -602,15 +599,31 @@
                     
                     <!-- QTY -->
                       <div class="media3">
-                          <input min="1" id="qty" type="number" style="width:95px; text-align: center;" name="qty[{{ $cart->id }}]" value="{{ $cart->qty }}" placeholder="Quantity">
+                          <input min="1" id="qty" type="number" style="width:95px; text-align: center;" name="qty[{{ $cart->id }}]" value="{{ $cart->qty }}" placeholder="No of Pages">
+                          <input min="1" id="noOfCopies" type="number" style="width:95px; text-align: center;" name="noOfCopies[{{ $cart->id }}]" value="{{ $cart->no_of_copies }}" placeholder="No of Copies">
                       </div>            
                     <!-- TOTAL PRICE -->
                         <div class="media4"> 
-                          <span class="price">{{ (($price*$cart->qty)) }}</span>
+                          <!-- <span class="price">{{ (($price*$cart->qty)*$cart->no_of_copies) }}</span> -->
+                          <span class="price">{{ productSinglePrice($productId)->total }}</span>
                         </div>
                     
                     <!-- REMOVE -->
                     <div class="media5"> <a class="remove-cart-item" data-id="{{ $cart->id }}" href="javascript:void(0)"><i class="icon-close"></i></a> </div>
+                  </div>
+                  <div class="main-content-div">
+                    <div id="cart-item-{{$cart->id}}" class="product-desc" style="display:none">
+                      {!! productSpec($cart->id) !!}
+                      <p><strong>Binding:</strong> {{ productSinglePrice($productId)->binding }}</p>
+
+                      @if(productSinglePrice($productId)->split)
+                        <p><strong>Split:</strong> {{ productSinglePrice($productId)->split }}</p>
+                      @endif
+
+                      <p><strong>Lamination:</strong> {{ productSinglePrice($productId)->lamination }}</p>
+                      <p><strong>Cover:</strong> {{ productSinglePrice($productId)->cover }}</p>
+                    </div>
+                    <span onclick="toggleDetail(this, '{{ $cart->id }}')" id="view-detail-{{$cart->id}}" style="cursor: pointer;">View Details</span>
                   </div>
                   @endforeach
                 </form>
@@ -634,9 +647,13 @@
                   <h6>grand total</h6>
                   <div class="grand-total">
                     <div class="order-detail">
-                      <!-- <p>Weight <span id="totalWeight">{{ cartWeightMulti() }}</span></p> -->
+                      <p>Weight <span id="totalWeight">{{ cartWeightMulti() }}</span></p>
+                      <!-- <p>Binding <span>{{ productPrice()->binding }}</span></p>
+                      <p>Lamination <span>{{ productPrice()->lamination }}</span></p>
+                      <p>Cover <span>{{ productPrice()->cover }}</span></p> -->
                       <p>Discount <span id="totalDiscount">0</span></p>
-                      <p class="all-total">PAID AMOUNT <span id="totalCost"> {{ physicalProductPriceMulti()->total }}</span></p>
+                      <!-- <p>Shipping <span>0</span></p> -->
+                      <p class="all-total">TOTAL COST <span id="totalCost"> {{ productPriceMulti()->total }}</span></p>
                     </div>
                   </div>
                 </div>
@@ -785,11 +802,10 @@
   const popupContainer = document.querySelector('#popupContainer');
 
   btnContainer.addEventListener('click', function(e) {
-    window.location.href='{{ url('checkout'); }}'
-      // const btn = e.target.closest('.popup-btn');
-      // if(!btn) return;
-      // const type = btn.dataset.popup;
-      // createPopup(type);
+      const btn = e.target.closest('.popup-btn');
+      if(!btn) return;
+      const type = btn.dataset.popup;
+      createPopup(type);
   });
 
   popupContainer.addEventListener('click', function(e) {

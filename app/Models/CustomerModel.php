@@ -8,7 +8,7 @@ class CustomerModel extends Model
 {
     
     protected $table = 'customer';
-    protected $fillable = ['name', 'email', 'phone', 'address','city', 'state', 'password', 'forgot_token', 'forgot_token_validity'];
+    protected $fillable = ['name', 'email', 'phone', 'address','city', 'state', 'password', 'forgot_token', 'forgot_token_validity', 'wallet_amount'];
     protected $guarded = ['id'];
 
 }

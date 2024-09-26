@@ -21,6 +21,7 @@ use App\Models\OrderModel;
 use App\Models\AdminModel;
 use App\Models\CustomerModel;
 use App\Models\CustomerAddressModel;
+use App\Models\WalletHistoryModel;
 
 
 class Customers extends Controller {
@@ -306,6 +307,92 @@ class Customers extends Controller {
 		echo json_encode($this->status);
 	}
 
+	public function doAddWalletAmount(Request $request) {
+		if ($request->ajax()) {
+
+			if (!can('create', 'customers')){
+				
+				$this->status = array(
+					'error' => true,
+					'eType' => 'final',
+					'msg' => 'Permission Denied.'
+				);
+
+				return json_encode($this->status);
+
+			}
+
+	        $validator = Validator::make($request->post(), [
+			    'customerId' => 'required|numeric|exists:customer,id',
+			    'amount' => 'required|numeric',
+			    'type' => 'required|in:credit,debit',
+			    'narration' => 'sometimes|nullable',
+			]);
+
+	        if ($validator->fails()) {
+	            
+	            $errors = $validator->errors()->getMessages();
+
+	            $this->status = array(
+					'error' => true,
+					'eType' => 'field',
+					'errors' => $errors,
+					'msg' => 'Validation failed'
+				);
+
+	        } else {
+
+	        	$amount = $request->post('amount');
+	        	$transferType = $request->post('type');
+
+	        	$credit = $transferType == 'credit'? $amount:0;
+	        	$debit = $transferType == 'debit'? $amount:0;
+	        	$userId = $request->post('customerId');
+
+	        	$obj = [
+	        		'admin_id' => adminId(),
+	        		'user_id' => $userId,
+	        		'debit' => $debit,
+	        		'credit' => $credit,
+	        		'narration' => $request->post('narration')
+	        	];
+
+	        	$isAdded = WalletHistoryModel::create($obj);
+
+	        	if ($isAdded) {
+
+	        		if ($transferType == 'credit') {
+						CustomerModel::where('id', $userId)->increment('wallet_amount', $amount);
+	        		} else {
+	        			CustomerModel::where('id', $userId)->decrement('wallet_amount', $amount);
+	        		}
+
+    				$this->status = array(
+						'error' => false,								
+						'msg' => 'Customer has been added successfully.'
+					);
+
+    			} else {
+    				$this->status = array(
+						'error' => true,
+						'eType' => 'final',
+						'msg' => 'Something went wrong.'
+					);
+    			}
+
+	        }
+
+		} else {
+			$this->status = array(
+				'error' => true,
+				'eType' => 'final',
+				'msg' => 'Something went wrong'
+			);
+		}
+
+		echo json_encode($this->status);
+	}
+
 	public function view(Request $request, $id) {
 
 		if (!can('read', 'customers')){
@@ -319,6 +406,7 @@ class Customers extends Controller {
 			$userId = $customer->id;
 			$customerAddress = CustomerAddressModel::where('user_id', $userId)->first();
 			$getAdminData = adminInfo();
+			$walletHistory = WalletHistoryModel::where('user_id', $userId)->latest()->get();
 
 			$data = array(
 				'title' => 'Customer Detail',
@@ -326,6 +414,7 @@ class Customers extends Controller {
 				'menu' => 'customers',
 				'customer' => $customer,
 				'customerAddress' => $customerAddress,
+				'walletHistory' => $walletHistory,
 				'adminData' => $getAdminData,
 			);
 
@@ -366,12 +455,13 @@ class Customers extends Controller {
 					$phoneNumber,
 					$customer->address,
 					$customer->city,
+					$customer->wallet_amount,
 					date('d-m-Y h:i A', strtotime($customer->created_at)),
 				];
 			}
 
 			$spreadsheet = new Spreadsheet();
-			$headers = ['Name', 'Email', 'Phone', 'Address', 'City', 'Date'];
+			$headers = ['Name', 'Email', 'Phone', 'Address', 'City', 'Wallet Amount', 'Date'];
 			$spreadsheet->getActiveSheet()->fromArray([$headers], null, 'A1');
 
 			$spreadsheet->getActiveSheet()->fromArray($dataRows, null, 'A2');

@@ -15,8 +15,10 @@ class VerifyCsrfToken extends Middleware
         //
         '/thank-you',
         '/payment-failed',
+        '/physical-payment-failed',
         '/payumoney',
         '/payment-response',
+        '/physical-payment-response',
         '/paynow-response',
     ];
 }

@@ -365,6 +365,47 @@ $("#kt_form_update").submit(function(event) {
 
 });
 
+$("#walletForm").submit(function(event) {
+    event.preventDefault();
+
+    url = $(this).attr('action');
+    formData = $(this).serialize();
+
+    $.ajax({
+        url: url,
+        type: 'POST',
+        dataType: 'json',
+        data: formData,
+        beforeSend: function() {
+            $(".text-danger").html('');
+            $("#walletForm_submit .indicator-label").hide();
+            $("#walletForm_submit .indicator-progress").show();
+        },
+        success: function (res) {
+            if (res.error == true) {
+                if (res.eType == 'field') {
+                    $.each(res.errors, function(index, val) {
+                        $("#"+index+"Err").html(val);
+                    });
+                } else {
+                    toastr.error(res.msg);
+                }
+            } else {
+                toastr.success(res.msg);
+            }
+
+            $("#walletForm_submit .indicator-label").show();
+            $("#walletForm_submit .indicator-progress").hide();
+        },
+        error: function (xhr, status, error) {
+            // Handle any errors that occur during the request.
+            var errorMessage = xhr.responseJSON;
+            toastr.error(errorMessage.message);
+        }
+    })
+
+});
+
 // Checkbox
 
 $('.allow').click(function(event) {

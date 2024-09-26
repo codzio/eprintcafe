@@ -18,7 +18,7 @@
     margin-right:inherit;
   }
   .tab-section-main{
-    margin:3% 0;
+    margin:2% 0 3%;
   }
   .tab-heading-sec{
     display: flex;
@@ -29,7 +29,8 @@
     height:100%;
   }
   .tabs-container{
-    height:680px;
+    /* height:680px; */
+    height:770px;
   }
   #place-order{
     left:0;
@@ -615,6 +616,7 @@
                     </div>
                     <div class="tab-content-right-sec">
                       <div class="drop-btn-sec">
+                        <button>Wallet Amount: Rs. {{ $customerData->wallet_amount }}</button>
                         <button>TOTAL FILES <span>{{ $cartData->count() }}</span></button>
                         <button class="drop-second-btn"><span>+</span>ADD MORE FILES</button>
                         <button><a href="tel:8448193390"><i class="fa fa-cog" aria-hidden="true"></i>Technical Issue : 8448193390</a></button>
@@ -698,6 +700,7 @@
 
                       <div class="tab-content-right-sec">
                         <div class="drop-btn-sec">
+                          <button>Wallet Amount: Rs. {{ $customerData->wallet_amount }}</button>
                           <button>TOTAL FILES <span>{{ $cartData->count() }}</span></button>
                           <button class="drop-second-btn addMoreBtn"><span>+</span>ADD MORE FILES</button>
                           <button><a href="tel:8448193390"><i class="fa fa-cog" aria-hidden="true"></i>Technical Issue : 8448193390</a></button>
@@ -1171,6 +1174,7 @@
                                   @if(setting('gst'))
                                   <p>GST ({{ setting('gst') }}%) <span id="gstChargeData"></span></p>
                                   @endif
+                                  <p>Wallet Amount <span id="walletAmountData">0</span></p>
                                   <p class="all-total">TOTAL<span id="totalData">2.8035</span></p>
                                 </div>
 
@@ -1196,7 +1200,7 @@
                               </div>
                             </li>
 
-                            <li style="margin-top:10px">
+                            <li style="margin-top:10px" class="sel-payment-method">
                               <div class="courier-checkbox checkbox-design" id="checkbox-style">
                                 <div class="checkbox-div">
                                   <label for="courier-dtdc">Phonepe</label>
@@ -1233,7 +1237,7 @@
                            <p class="nobottommargin"><span class="t600">Contact Person: dd</span><br>Address: ddd<br>Landmark :<br>PinCode :282003<br>Mobile :8077796066<br></p>
                          </div>
                          <div class="order-confirmation">
-                           <h2>Order confirmation email will sent to : <a href="mailto:faizan7017084@gmail.com">faizan7017084@gmail.com</a></h2>
+                           <h2>Order confirmation email will sent to : <a href="mailto:{{ $customerData->email }}">{{ $customerData->email }}</a></h2>
                            <p>Expected Delivery Timeline - Delhi NCR (4 to 7 working Days) and in other states (7 to 10 Working Days).</p>
                          </div>
                        </div>
@@ -1321,14 +1325,19 @@
           $("#discountData").html(res.discount);
           $("#shippingData").html(res.shippingCharge);
           $("#subTotalData").html(res.subTotal);
+          
+          $("#walletAmountData").html(res.usedWalletAmount);
+
           $("#packagingChargeData").html(res.packagingCharges);
           $("#gstChargeData").html(res.gstCharges);
           $("#totalData").html(res.paidAmount);
 
           if (!res.paidAmount) {
-            $('.home_btn_main').addClass('hide');
+            $('.sel-payment-method').addClass('hide');
+            //$('.home_btn_main').addClass('hide');
           } else {
-            $('.home_btn_main').removeClass('hide');
+            //$('.home_btn_main').removeClass('hide');
+            $('.sel-payment-method').removeClass('hide');
           }
 
         }
@@ -1960,7 +1969,7 @@
         data: formData,
         beforeSend: function() {
           $(".error").html('');
-          $("#placeOrderBtn").html('Please Wait...');
+          $("#placeOrderBtn").html('Please Wait...').attr('disabled', 'true');
           $("#placeOrderMsg").html('');
         }, success: function(res) {
           if(res.error == true) {
@@ -1980,7 +1989,7 @@
             window.location.href = res.redirect;
           }
 
-          $("#placeOrderBtn").html('Place Order')
+          $("#placeOrderBtn").html('Place Order').removeAttr('disabled');
 
         }
       });
@@ -2020,6 +2029,9 @@
             $("#shippingData").html(res.priceData.shipping)
             $("#subTotalData").html(res.priceData.subTotal);
             $("#packagingChargeData").html(res.packagingCharges);
+            
+            $("#walletAmountData").html(res.usedWalletAmount);
+
             $("#totalData").html(res.paidAmount);
             $("#couponCodeErr").html(res.msg).css('color', 'white');
             //swal('Success!', res.msg, 'success');

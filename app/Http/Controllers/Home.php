@@ -35,6 +35,10 @@ use App\Models\BarcodeModel;
 
 use App\Models\ContactModel;
 use App\Models\LandingPageEnquiryModel;
+use App\Models\WalletHistoryModel;
+
+use App\Models\PhysicalOrderModel;
+use App\Models\PhysicalOrderItemModel;
 
 use Storage;
 use League\Flysystem\Filesystem;
@@ -207,65 +211,96 @@ class Home extends Controller {
 
 			$productId = $isProdExist->id;
 
-			//Pricing
-			$paperSize = PricingModel::
-			join('paper_size', 'pricing.paper_size_id', '=', 'paper_size.id')
-			->where('pricing.product_id', $productId)
-			->select('paper_size.*')
-			->distinct('paper_size.id')
-			->get();
+			if($isProdExist->product_type == 'digital') {
 
-			$defPaperSize = PricingModel::defPaperSize($productId);
-			$defGsm = PricingModel::defPaperGsm($productId, $defPaperSize);
-			$defPaperType = PricingModel::defPaperType($productId, $defPaperSize, $defGsm->gsmId);
-			
-			$defPaperSizeId = isset($defPaperSize->id)? $defPaperSize->id:null;
-			$defPaperSides = PricingModel::defPaperSides($productId, $defPaperSizeId, $defGsm->gsmId, $defPaperType->paperTypeId);
+				//Pricing
+				$paperSize = PricingModel::
+				join('paper_size', 'pricing.paper_size_id', '=', 'paper_size.id')
+				->where('pricing.product_id', $productId)
+				->select('paper_size.*')
+				->distinct('paper_size.id')
+				->get();
 
-			$defPaperColor = PricingModel::defPaperColor($productId, $defPaperSizeId, $defGsm->gsmId, $defPaperType->paperTypeId, $defPaperSides->paperSideId);
+				$defPaperSize = PricingModel::defPaperSize($productId);
+				$defGsm = PricingModel::defPaperGsm($productId, $defPaperSize);
+				$defPaperType = PricingModel::defPaperType($productId, $defPaperSize, $defGsm->gsmId);
+				
+				$defPaperSizeId = isset($defPaperSize->id)? $defPaperSize->id:null;
+				$defPaperSides = PricingModel::defPaperSides($productId, $defPaperSizeId, $defGsm->gsmId, $defPaperType->paperTypeId);
 
-			$defGsmOpt = $defGsm->gsmOptions;			
-			$defPaperTypeOpt = $defPaperType->paperOptions;
-			$defPaperSidesOpt = $defPaperSides->paperSidesOptions;
-			$defPaperColorOpt = $defPaperColor->paperColorOptions;
-			$defBindingOpt = $defGsm->bindingOptions;
-			$defLaminationOpt = $defGsm->laminationOptions;
+				$defPaperColor = PricingModel::defPaperColor($productId, $defPaperSizeId, $defGsm->gsmId, $defPaperType->paperTypeId, $defPaperSides->paperSideId);
 
-			$covers = CoverModel::get();
-			$buttonName = $isProdExist->name;
+				$defGsmOpt = $defGsm->gsmOptions;			
+				$defPaperTypeOpt = $defPaperType->paperOptions;
+				$defPaperSidesOpt = $defPaperSides->paperSidesOptions;
+				$defPaperColorOpt = $defPaperColor->paperColorOptions;
+				$defBindingOpt = $defGsm->bindingOptions;
+				$defLaminationOpt = $defGsm->laminationOptions;
 
-			if (!empty($isProdExist->button_name)) {
-				$buttonName = $isProdExist->button_name;
+				$covers = CoverModel::get();
+				$buttonName = $isProdExist->name;
+
+				if (!empty($isProdExist->button_name)) {
+					$buttonName = $isProdExist->button_name;
+				}
+
+				$bannerImg = getImg($isProdExist->thumbnail_id);
+
+				if (!empty($isProdExist->banner_image)) {
+					$bannerImg = getImg($isProdExist->banner_image);
+				}
+				
+				$data = array(
+					'title' => $isProdExist->name,
+					'pageTitle' => $isProdExist->name,
+					'menu' => 'product',
+					'product' => $isProdExist,
+					'relProducts' => $getRelProds,
+					'paperSize' => $paperSize,
+					'covers' => $covers,
+
+					'defPaperSize' => $defPaperSize,
+					'defGsmOpt' => $defGsmOpt,
+					'defPaperTypeOpt' => $defPaperTypeOpt,
+					'defPaperSidesOpt' => $defPaperSidesOpt,
+					'defPaperColorOpt' => $defPaperColorOpt,
+					'defBindingOpt' => $defBindingOpt,
+					'defLaminationOpt' => $defLaminationOpt,
+					'customerId' => $customerId,
+					'buttonName' => $buttonName,
+					'bannerImg' => $bannerImg,
+				);
+
+				return view('frontend/product-detail', $data);
+
+			} else {
+
+				$bannerImg = getImg($isProdExist->thumbnail_id);
+
+				if (!empty($isProdExist->banner_image)) {
+					$bannerImg = getImg($isProdExist->banner_image);
+				}
+
+				$galleryImages = [];
+
+				if(!empty($isProdExist->gallery_images)) {
+					$galleryImages = json_decode($isProdExist->gallery_images);
+				}
+
+				$data = array(
+					'title' => $isProdExist->name,
+					'pageTitle' => $isProdExist->name,
+					'menu' => 'product',
+					'product' => $isProdExist,
+					'relProducts' => $getRelProds,
+					'customerId' => $customerId,
+					'bannerImg' => $bannerImg,
+					'galleryImages' => $galleryImages
+				);
+
+				return view('frontend/physical-product-detail', $data);
+
 			}
-
-			$bannerImg = getImg($isProdExist->thumbnail_id);
-
-			if (!empty($isProdExist->banner_image)) {
-				$bannerImg = getImg($isProdExist->banner_image);
-			}
-			
-			$data = array(
-				'title' => $isProdExist->name,
-				'pageTitle' => $isProdExist->name,
-				'menu' => 'product',
-				'product' => $isProdExist,
-				'relProducts' => $getRelProds,
-				'paperSize' => $paperSize,
-				'covers' => $covers,
-
-				'defPaperSize' => $defPaperSize,
-				'defGsmOpt' => $defGsmOpt,
-				'defPaperTypeOpt' => $defPaperTypeOpt,
-				'defPaperSidesOpt' => $defPaperSidesOpt,
-				'defPaperColorOpt' => $defPaperColorOpt,
-				'defBindingOpt' => $defBindingOpt,
-				'defLaminationOpt' => $defLaminationOpt,
-				'customerId' => $customerId,
-				'buttonName' => $buttonName,
-				'bannerImg' => $bannerImg,
-			);
-
-			return view('frontend/product-detail', $data);
 
 		} elseif (in_array($slug, $landingPages)) {
 
@@ -660,6 +695,62 @@ class Home extends Controller {
 
 	}
 
+	public function physicalPayumoney(Request $request) {
+		
+		$paymentSess = Session::get('physicalPaymentSess');
+
+		if (!empty($paymentSess)) {			
+
+    		$action = $paymentSess['action'];
+			$hash = $paymentSess['hash'];
+			$MERCHANT_KEY = $paymentSess['MERCHANT_KEY'];
+			$txnid = $paymentSess['txnid'];
+			$successURL = $paymentSess['successURL'];
+			$failURL = $paymentSess['failURL'];
+			$name = $paymentSess['name'];
+			$email = $paymentSess['email'];
+			$paidAmount = $paymentSess['amount'];
+			$productName = $paymentSess['productinfo'];
+
+	        Log::channel('payment-log')->info('redirecting-to-payumoney-'.date('Y-m-d h:i'), ['data' => json_encode($paymentSess)]);
+
+			// $posted = array(
+	        //     'key' => $MERCHANT_KEY,
+	        //     'txnid' => $txnid,
+	        //     'amount' => $paidAmount,
+	        //     'productinfo' => $productName,
+	        //     'firstname' => $name,
+	        //     'email' => $email,
+	        //     'surl' => $successURL,
+	        //     'furl' => $failURL,
+	        //     'service_provider' => 'payu_paisa',
+	        // );
+
+    		// $hashSequence = "key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|udf6|udf7|udf8|udf9|udf10";
+	        // $hashString = '';
+	        // foreach (explode('|', $hashSequence) as $key) {
+	        //     $hashString .= isset($posted[$key]) ? $posted[$key] : '';
+	        //     $hashString .= '|';
+	        // }
+
+	        // $hashString .= 'FwyslfXn3zDZtugwyHCiZu70zDmariAM';
+	        // $calculatedHash = strtolower(hash('sha512', $hashString));
+
+	        // if ($calculatedHash == $hash) {
+	        // 	echo "matched";
+	        // } else {
+	        // 	echo "not matched";
+	        // }
+	        // die();
+			
+			return view('payu',compact('action','hash','MERCHANT_KEY','txnid','successURL','failURL','name','email','paidAmount', 'productName'));
+
+		} else {
+			return redirect(route('homePage'));
+		}
+
+	}
+
 	public function paymentResponse(Request $request) {
 
 		Log::channel('payment-log')->info('payumoney-response-'.date('Y-m-d h:i'), ['data' => json_encode($request->all())]);
@@ -708,6 +799,7 @@ class Home extends Controller {
 	    	}
 
 	    	$customerAdd = CustomerAddressModel::where('user_id', customerId())->first();
+			$customerData = customerData();
 
 	    	$myCustomerAdd = [];
 
@@ -722,7 +814,7 @@ class Home extends Controller {
 	    	// ->first();
 	    	// $productName = ProductModel::where('id', getCartProductId())->value('name');
 
-	    	$getCartData = CartModel::where('user_id', customerId())
+	    	$getCartData = CartModel::where('user_id', customerId())->where('product_type', 'digital')
 	    	->orderBy('cart.id', 'desc')
 	    	->get();
 
@@ -755,6 +847,19 @@ class Home extends Controller {
     			$paidAmount += $gstCharges;
     		}
 
+			$walletAmount = $customerData->wallet_amount;
+			$usedWalletAmount = 0;
+
+			if($walletAmount) {
+				if($paidAmount >= $walletAmount) {
+					$usedWalletAmount = $walletAmount;
+					$paidAmount = $paidAmount - $walletAmount;
+				} else {
+					$usedWalletAmount = $paidAmount;
+					$paidAmount = 0;
+				}
+			}
+
 	    	$orderObj = array(
 	    		'order_id' => $request->post('txnid'),
 	    		'user_id' => customerId(),
@@ -769,6 +874,7 @@ class Home extends Controller {
 	    		// 'paid_amount' => $productPrice->total,
 	    		'packaging_charges' => $packagingCharges,
 	    		'gst_charges' => $gstCharges,
+				'wallet_amount' => $usedWalletAmount,
 	    		'paid_amount' => $paidAmount,
 	    		// 'price_details' => json_encode($productPrice),
 	    		'transaction_details' => json_encode($_POST),
@@ -791,6 +897,19 @@ class Home extends Controller {
 	    	if ($isOrderCreated) {
 
 	    		$orderId = $isOrderCreated->id;
+
+				if($usedWalletAmount) {
+					//Deduct wallet amount
+					CustomerModel::where('id', customerId())->decrement('wallet_amount', $usedWalletAmount);
+
+					$obj = [
+						'user_id' => customerId(),
+						'debit' => $usedWalletAmount,
+						'narration' => 'Wallet amount used for order id '.strtoupper($request->post('txnid'))
+					];
+	
+					$isAdded = WalletHistoryModel::create($obj);
+				}
 
 	    		foreach ($getCartData as $cartData) {
 
@@ -825,7 +944,7 @@ class Home extends Controller {
 	    		$getCustomer = CustomerModel::where('id', customerId())->first();
 
 	    		//Remove Cart Data
-	    		CartModel::where('user_id', customerId())->delete();
+	    		CartModel::where('user_id', customerId())->where('product_type', 'digital')->delete();
 
 	    		//send SMS
 	    		SmsSending::orderPlaced($getCustomer->phone, $getCustomer->name);
@@ -877,6 +996,242 @@ class Home extends Controller {
     		Session::forget('courierSess');
 
     		return redirect()->route('paymentFailPage');
+
+		}
+	}
+
+	public function physicalPaymentResponse(Request $request) {
+
+		Log::channel('payment-log')->info('payumoney-response-'.date('Y-m-d h:i'), ['data' => json_encode($request->all())]);
+
+		if ($request->post('status') == 'success') {
+			
+			$productPrice = physicalProductPriceMulti();
+	    	$couponCode = null;
+	    	$discount = 0;
+
+	    	// echo "<pre>";
+	    	// print_r($_POST);
+			// print_r(productPrice());	    	
+	    	// die();
+
+	    	$couponData = Session::get('physicalCouponSess');
+
+	    	if (!empty($couponData)) {
+	    		$couponCode = $couponData['coupon_code'];
+	    		$discount = $couponData['discount'];
+	    	}	 
+
+	    	$shipping = 0;
+
+	    	$shippingData = Session::get('physicalShippingSess');
+	    	if (!empty($shippingData)) {
+	    		$shipping = $shippingData['shipping'];
+	    	}
+
+	    	$remark = null;
+	    	$remarkData = Session::get('physicalRemarkSess');
+	    	if (!empty($remarkData)) {
+	    		$remark = $remarkData['remark'];
+	    	}
+
+	    	$courier = null;
+	    	$courierData = Session::get('physicalCourierSess');
+	    	if (!empty($courierData)) {
+	    		$courier = $courierData['courier'];
+	    	}
+
+	    	$customerAdd = CustomerAddressModel::where('user_id', customerId())->first();
+			$customerData = customerData();
+
+	    	$myCustomerAdd = [];
+
+	    	if (!empty($customerAdd)) {
+	    		$myCustomerAdd = json_encode($customerAdd->toArray());
+	    	} else {
+	    		$myCustomerAdd = json_encode($myCustomerAdd);
+	    	}
+
+	    	// $getCartData = CartModel::where('user_id', customerId())
+	    	// ->orderBy('cart.id', 'desc')
+	    	// ->first();
+	    	// $productName = ProductModel::where('id', getCartProductId())->value('name');
+
+	    	$getCartData = CartModel::where('user_id', customerId())->where('product_type', 'physical')
+	    	->orderBy('cart.id', 'desc')
+	    	->get();
+
+	    	//$getDocumentLink = CartModel::where('user_id', customerId())->take(1)->value('document_link');
+
+	    	//$barcode = BarcodeModel::where(['is_active' => 1, 'is_used' => 0])->first();
+
+	    	// $paidAmount = $productPrice->total;
+	    	// $packagingCharges = 0;
+	    	// if (setting('packaging_charges')) {
+	    	// 	$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+    		// 	$paidAmount += $packagingCharges;
+    		// }
+
+    		$paidAmount = $productPrice->subTotal;
+    		$packagingCharges = 0;
+    		// if (setting('packaging_charges')) {
+    		// 	$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+	        // 	$paidAmount += $packagingCharges;
+    		// }
+
+    		$paidAmount += $productPrice->shipping;
+	        $paidAmount -= $productPrice->discount;
+
+	        //add 5% GST
+    		$gstCharges = 0;
+    		// if (setting('gst')) {
+    		// 	$gstCharges = ($paidAmount*setting('gst'))/100;
+    		// 	$gstCharges = round($gstCharges, 2);
+    		// 	$paidAmount += $gstCharges;
+    		// }
+
+			$walletAmount = isset($customerData->wallet_amount)? $customerData->wallet_amount:0;
+			$usedWalletAmount = 0;
+
+			// if($walletAmount) {
+			// 	if($paidAmount >= $walletAmount) {
+			// 		$usedWalletAmount = $walletAmount;
+			// 		$paidAmount = $paidAmount - $walletAmount;
+			// 	} else {
+			// 		$usedWalletAmount = $paidAmount;
+			// 		$paidAmount = 0;
+			// 	}
+			// }
+
+	    	$orderObj = array(
+	    		'order_id' => $request->post('txnid'),
+	    		'user_id' => customerId(),
+	    		// 'product_id' => getCartProductId(),
+	    		// 'product_name' => $productName,
+	    		// 'product_details' => json_encode(productSpec(getCartId())),
+	    		// 'weight_details' => json_encode(cartWeight()),
+	    		'coupon_code' => $couponCode,
+	    		'discount' => $discount,
+	    		'shipping' => $shipping,
+	    		// 'paid_amount' => ceil($productPrice->total),
+	    		// 'paid_amount' => $productPrice->total,
+	    		'packaging_charges' => $packagingCharges,
+	    		'gst_charges' => $gstCharges,
+				'wallet_amount' => $usedWalletAmount,
+	    		'paid_amount' => $paidAmount,
+	    		// 'price_details' => json_encode($productPrice),
+	    		'transaction_details' => json_encode($_POST),
+	    		// 'customer_address' => json_encode($customerAdd->toArray()),
+	    		'customer_address' => $myCustomerAdd,
+	    		// 'document_link' => $getDocumentLink,
+	    		'remark' => $remark,
+	    		// 'wetransfer_link' => $wetransferLink,
+	    		// 'courier' => $courier,
+	    		// 'qty' => $getCartData->qty,
+	    		// 'no_of_copies' => $getCartData->no_of_copies,
+	    	);
+
+	    	// if (!empty($barcode)) {
+	    	// 	$orderObj['shipping_label_number'] = $barcode->barcode;
+	    	// }
+
+	    	$isOrderCreated = PhysicalOrderModel::create($orderObj);
+	    	
+	    	if ($isOrderCreated) {
+
+	    		$orderId = $isOrderCreated->id;
+
+				if($usedWalletAmount) {
+					//Deduct wallet amount
+					CustomerModel::where('id', customerId())->decrement('wallet_amount', $usedWalletAmount);
+
+					$obj = [
+						'user_id' => customerId(),
+						'debit' => $usedWalletAmount,
+						'narration' => 'Wallet amount used for order id '.strtoupper($request->post('txnid'))
+					];
+	
+					$isAdded = WalletHistoryModel::create($obj);
+				}
+
+	    		foreach ($getCartData as $cartData) {
+
+	    			$productData = ProductModel::where('id', $cartData->product_id)->first();
+
+					$price = $productData->mrp;
+
+					if(!empty($productData->sp) && $productData->mrp > $productData->sp) {
+						$price = $productData->sp;
+					}
+	    			
+	    			$orderItemObj = array(
+	    				'order_id' => $orderId,
+	    				'product_id' => $cartData->product_id,
+	    				'product_name' => $productData->name,	    				
+	    				// 'no_of_copies' => $cartData->no_of_copies,
+	    				// 'product_details' => json_encode(productSpec($cartData->id)),
+	    				// 'weight_details' => json_encode(cartWeightSingle($cartData->id)),
+	    				// 'price_details' => json_encode(productSinglePrice($cartData->product_id)),
+	    				'qty' => $cartData->qty,
+						'price' => $price,
+	    			);
+					
+	    			PhysicalOrderItemModel::create($orderItemObj);
+
+	    		}
+
+
+	    		//update barcode once used
+	    		// if (!empty($barcode)) {
+	    		// 	BarcodeModel::where('id', $barcode->id)->update(['is_used' => 1]);
+	    		// }
+
+	    		$getCustomer = CustomerModel::where('id', customerId())->first();
+
+	    		//Remove Cart Data
+	    		CartModel::where('user_id', customerId())->where('product_type', 'physical')->delete();
+
+	    		//send SMS
+	    		SmsSending::orderPlaced($getCustomer->phone, $getCustomer->name);
+
+	    		//send email
+	    		//$orderId = 8;
+				// $getOrder = OrderModel::
+				// join('product', 'orders.product_id', '=', 'product.id')
+				// ->select('orders.*', 'product.registered_hsn_code', 'product.unregistered_hsn_code')
+				// ->where('orders.id', $orderId)->first();
+
+				//EmailSending::orderEmailNew($orderId);
+	    		
+	    		Session::forget('physicalShippingSess');
+				Session::forget('physicalCouponSess');
+				Session::forget('physicalPaymentSess');		    		
+				Session::forget('physicalRemarkSess');
+
+	    		$amount = $request->post('amount');
+				$transactionId = $request->post('txnid');
+
+				return redirect()->route('thankyouPage', ['amount' => $amount, 'transactionId' => $transactionId]);
+
+	    	} else {
+
+	    		Session::forget('physicalShippingSess');
+				Session::forget('physicalCouponSess');
+				Session::forget('physicalPaymentSess');		    		
+				Session::forget('physicalRemarkSess');
+
+	    		return redirect()->route('physicalPaymentFailPage');
+
+	    	}
+
+		} else {
+			
+			Session::forget('physicalShippingSess');
+			Session::forget('physicalCouponSess');
+			Session::forget('physicalPaymentSess');		    		
+			Session::forget('physicalRemarkSess');
+
+    		return redirect()->route('physicalPaymentFailPage');
 
 		}
 	}
@@ -1263,6 +1618,22 @@ class Home extends Controller {
 
 		Session::forget('paymentSess');
 		Session::forget('paymentPayNowSess');
+
+		$data = array(
+			'title' => 'Payment Failed',
+			'pageTitle' => 'Payment Failed',
+			'menu' => 'payment-failed',
+		);
+
+		return view('frontend/paymentFailure', $data);
+	}
+
+	public function physicalPaymentFail(Request $request) {
+
+		Log::channel('payment-log')->info('payment-failed-'.date('Y-m-d h:i'), ['data' => json_encode($request->all())]);
+
+		Session::forget('physicalPaymentSess');
+		Session::forget('physicalPaymentPayNowSess');
 
 		$data = array(
 			'title' => 'Payment Failed',

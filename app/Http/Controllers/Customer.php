@@ -22,6 +22,7 @@ use App\Models\ProductModel;
 use App\Models\CartModel;
 use App\Models\CustomerAddressModel;
 use App\Models\OrderModel;
+use App\Models\WalletHistoryModel;
 
 class Customer extends Controller {
 
@@ -43,6 +44,7 @@ class Customer extends Controller {
 	    	$address = CustomerAddressModel::where($cond)->first();
 
 	    	$orders = OrderModel::where(['user_id' => $customerId])->latest()->get();
+			$walletHistory = WalletHistoryModel::where(['user_id' => $customerId])->latest()->get();
 
 	    	// $productDetails= json_decode($orders->product_details);
 
@@ -68,6 +70,7 @@ class Customer extends Controller {
 				// 'productDetails' => $productDetails,
 				// 'priceDetailsComp' => $priceDetailsComp,
 				'orders' => $orders,
+				'walletHistory' => $walletHistory,
 			);
 
 			return view('frontend/dashboard', $data);

@@ -77,8 +77,13 @@
     height: 44px !important;
   }
 
+  .shopping-cart .order-place {
+    padding-top: 10px;
+  }
+
   .shopping-cart {
-    margin-bottom: 5vh;
+    /* margin-bottom: 5vh; */
+    margin-bottom: 3vh;
   }
 
   .shopping-cart .order-place input {
@@ -122,6 +127,10 @@
 
   .shopping-cart .order-place .order-detail p {
     color: black !important;
+  }
+
+  .shopping-cart .order-place .order-detail {
+    margin-bottom: 15px;
   }
 
   .dropzone.dz-drag-hover {
@@ -180,39 +189,6 @@
             
             <!-- ESTIMATE SHIPPING & TAX -->
             <div class="col-sm-7">
-
-              <h6>UPLOAD DOCUMENTS</h6>
-              <small>You can upload multiple documents by click on this box</small>
-              <div id="dropzone">
-                <form action="{{ route('doUploadDropbox') }}" class="dropzone needsclick" id="upload">
-                  <div class="dz-message needsclick">
-                    <span class="text">
-                    <img src="{{ asset('public/frontend/img/upload.png') }}" alt="Upload" />
-                      <p><strong>Drop files here or click to upload.</strong></p>
-                    </span>
-                    <span class="plus">+</span>
-                  </div>
-                </form>
-                <span id="dropzoneMsg"></span>
-              </div>
-
-              <div style="display: flex;">
-                <button id="openDropzoneButton" type="button" class="btn btn-primary" style="margin-bottom: 15px;">Click to Upload</button>
-
-                <p style="margin-left:10px; text-align:end">Pls contact <a style="color:blue" href="mailto:mail@eprintcafe.com">mail@eprintcafe.com</a> or <a style="color:blue" href="tel:84481 93391">+91 84481 93391</a> / <a style="color:blue" href="tel:84481 93390">+91 84481 93390</a> for assistance</p>
-
-              </div>
-
-              <div style="text-align: center; font-weight: bold;">OR</div>
-              
-              <div style="margin-bottom: 5rem;">
-                <input type="text" name="wetransferLink" id="wetransferLink" class="form-control" placeholder="Enter WeTransfer Link">  
-                <span id="wetransferLinkErr"></span>
-              </div>
-
-              <div id="uploadedDocuments">
-                {!! $docTemplate !!}
-              </div>
 
               <h6>SHIPPING DETAILS</h6>
               <form id="customerAddressForm" method="post" action="{{ route('saveAddress') }}">
@@ -381,12 +357,12 @@
                       
                       <!-- DISCOUNT CODE -->
                       <div class="col-12">
-                        <h6>DISCOUNT CODE</h6>
+                        <!-- <h6>DISCOUNT CODE</h6>
                         <form id="couponCodeForm" method="post" action="{{ route('applyPromo') }}">
                           <input id="couponCode" name="couponCode" type="text" value="" placeholder="ENTER YOUR CODE IF YOU HAVE ONE">
                           <button id="couponCodeFormBtn" type="submit" class="btn btn-small btn-dark">APPLY CODE</button>
                           <p id="couponCodeErr" class="removeErr"></p>
-                        </form>
+                        </form> -->
 
                         <h6 style="margin-top: 2rem;">Suggest Your Inputs</h6>
                         <textarea id="remark" class="form-control" rows="3" name="remark"></textarea>
@@ -398,26 +374,24 @@
               </div>
 
                 <div class="order-detail">
-                  <!-- <p>Binding <span id="discountData">{{ $productPrice->binding }}</span></p>
-                  <p>Lamination <span id="discountData">{{ $productPrice->lamination }}</span></p>
-                  <p>Cover <span id="discountData">{{ $productPrice->cover }}</span></p> -->
-                  <p>Weight <span id="cartWeight">{{ cartWeightMulti() }}</span></p>
+                  <!-- <p>Weight <span id="cartWeight">{{ cartWeightMulti() }}</span></p> -->
                   <p>Discount <span id="discountData">{{ $productPrice->discount }}</span></p>
                   <p>Shipping Charge <span id="shippingData">{{ $productPrice->shipping }}</span></p>
                   <p>Sub Total <span id="subTotalData">{{ $productPrice->total-$productPrice->shipping-$productPrice->discount }}</span></p>
 
                   @php $packagingCharges = 0; @endphp
 
-                  @if(setting('packaging_charges'))
+                  <!-- @if(setting('packaging_charges'))
                   @php
                     $subTotal = $productPrice->total-$productPrice->shipping-$productPrice->discount;
                     $packagingCharges = ($subTotal*setting('packaging_charges'))/100;
                   @endphp
                   <p>Packaging Charges ({{ setting('packaging_charges') }}%) <span id="packagingChargeData">{{ $packagingCharges }}</span></p>
-                  @endif
+                  @endif -->
 
                   <!-- SUB TOTAL -->
-                  <p class="all-total">TOTAL<span id="totalData">{{ $productPrice->total+$packagingCharges }}</span></p>
+                  <!-- <p class="all-total">TOTAL<span id="totalData">{{ $productPrice->total+$packagingCharges }}</span></p> -->
+                  <p class="all-total">TOTAL<span id="totalData">{{ $productPrice->total }}</span></p>
                 </div>
                 <div class="pay-meth">
                   <ul>
@@ -447,7 +421,7 @@
                       </div>
                     </li> -->
 
-                    <li>
+                    <!-- <li>
                       <div class="courier-checkbox checkbox-design" id="checkbox-style">
                         <div class="checkbox-div">
                           <label for="courier-dtdc">DTDC</label>
@@ -458,7 +432,7 @@
                           <input class="courier-option" onchange="updateCourier(this)" style="" name="courier" value="India Post" id="courier-ip" class="styled" type="checkbox">
                         </div>
                       </div>
-                    </li>
+                    </li> -->
 
                     <li style="margin-top:10px">
                       <div class="courier-checkbox checkbox-design" id="checkbox-style">
@@ -716,66 +690,6 @@
         } 
       })
 
-    });
-
-    document.getElementById('openDropzoneButton').addEventListener('click', function() {
-        $("#upload").trigger('click');
-    });
-
-    Dropzone.autoDiscover = false;
-    $("#upload").dropzone({
-        url: "{{ route('doUploadDropbox') }}",
-        method: 'POST',
-        parallelUploads: 30,
-        uploadMultiple: true,
-        maxFilesize: 1000, //MB
-        maxFiles: 30, //Cannot upload more than 10 files
-        acceptedFiles: ".jpg, .jpeg, .png, .zip, application/pdf, application/zip",
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        init: function() {
-            this.on("error", function(file, res) {
-                // Handle errors if the file size exceeds the limit or for other reasons
-                if (res) {
-                    console.log(res);
-                }
-            }),
-            this.on("success", function(file, res) {
-                // Handle errors if the file size exceeds the limit or for other reasons
-        
-                res = JSON.parse(res);
-                $this = this;
-
-                if (res.error) {
-                    
-                    if (res.eType == 'final') {
-                        //toastr.error(res.msg);
-                        $("#dropzoneMsg").html(res.msg).css('color', 'red');
-                    } else {
-                        $.each(res.errors, function(index, val) {
-                           //toastr.error(val);  
-                          $("#dropzoneMsg").html(val).css('color', 'red');
-                        });
-                    }
-
-                } else {
-
-                    // toastr.success(res.msg);
-
-                    $("#dropzoneMsg").html(res.msg).css('color', 'green');
-                    $("#uploadedDocuments").html(res.docTemplate);
-
-                    timeout = setTimeout(function() {
-                        //$this.removeAllFiles();
-                        $("#dropzoneMsg").hide();
-                        clearTimeout(timeout);
-                    }, 3000);
-
-                }
-
-            })
-        },
     });
 
   });

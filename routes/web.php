@@ -31,7 +31,10 @@ use App\Http\Controllers\admin\Gsm;
 use App\Http\Controllers\admin\Product;
 use App\Http\Controllers\admin\Pricing;
 use App\Http\Controllers\admin\Contact;
+
 use App\Http\Controllers\admin\Orders;
+use App\Http\Controllers\admin\PhysicalOrders;
+
 use App\Http\Controllers\admin\Customers;
 use App\Http\Controllers\admin\AbandonedCart;
 
@@ -78,11 +81,17 @@ Route::prefix('/')->group(function() {
     Route::get('/reset-password', [Customer::class,'resetPassword'])->name('customerResetPassword');
 
     Route::any('/payumoney', [Home::class, 'payumoney'])->name('payumoneyPage');
+    Route::any('/physical-payumoney', [Home::class, 'physicalPayumoney'])->name('physicalPayumoneyPage');
+    
     Route::any('/payment-response', [Home::class, 'paymentResponse'])->name('paymentResponse');
+    Route::any('/physical-payment-response', [Home::class, 'physicalPaymentResponse'])->name('physicalPaymentResponse');
+
     Route::any('/paynow-response', [Home::class, 'paynowResponse'])->name('paynowResponse');
 
     Route::any('/thank-you', [Home::class, 'thankyou'])->name('thankyouPage');
+    
     Route::any('/payment-failed', [Home::class, 'paymentFail'])->name('paymentFailPage');
+    Route::any('/physical-payment-failed', [Home::class, 'physicalPaymentFail'])->name('physicalPaymentFailPage');
 
     // Route::get('/upload', [Home::class, 'upload'])->name('uploadPage');
     // Route::post('/doUploadDropbox', [Home::class, 'doUploadDropbox'])->name('doUploadDropbox');
@@ -146,11 +155,16 @@ Route::prefix('/checkout')->group(function() {
     Route::post('/doSaveAddress', [Checkout::class, 'doSaveAddress'])->name('saveAddress');
     Route::post('/doPlaceOrder', [Checkout::class, 'doPlaceOrder'])->name('placeOrder');
     Route::get('/response', [Checkout::class, 'response'])->name('response');
+
+    Route::get('/physicalResponse', [Checkout::class, 'physicalResponse'])->name('physicalResponse');
 });
 
 Route::post('/checkPincode', [Home::class, 'checkPincode'])->name('checkPincode');
 Route::post('/checkDocumentLink', [Home::class, 'checkDocumentLink'])->name('checkDocumentLink');
+
 Route::post('/doAddToCart', [Cart::class, 'doAddToCart'])->name('addToCart');
+Route::post('/doPhysicalAddToCart', [Cart::class, 'doPhysicalAddToCart'])->name('physicalAddToCart');
+
 Route::post('/doRemoveCartItem', [Cart::class, 'doRemoveCartItem'])->name('removeCartItem');
 Route::post('/doUpdateCartItem', [Cart::class, 'doUpdateCartItem'])->name('updateCartItem');
 Route::post('/doApplyPromo', [Cart::class, 'doApplyPromo'])->name('applyPromo');
@@ -292,11 +306,18 @@ Route::prefix(config('admin.path'))->middleware('web')->group(function () {
 
         //Orders
         Route::prefix('orders')->group(function() {
+            
             Route::get('/', [Orders::class, 'index'])->name('adminOrders');
-            Route::get('/deleted', [Orders::class, 'deletedOrders'])->name('adminDeletedOrders');
+            
+            Route::get('/physical-orders', [PhysicalOrders::class, 'index'])->name('adminPhysicalOrders');
+            Route::get('/deleted-physical-orders', [PhysicalOrders::class, 'deletedOrders'])->name('adminDeletedPhysicalOrders');
+            Route::get('/get-physical-orders', [PhysicalOrders::class, 'get'])->name('getAdminPhysicalOrders');
+            Route::get('/view-physical-order/{id}', [PhysicalOrders::class, 'view'])->name('adminViewPhysicalOrder');
+
+            Route::get('/deleted', [Orders::class, 'deletedOrders'])->name('adminDeletedOrders');         
 
             Route::get('/get', [Orders::class, 'get'])->name('getAdminOrders');
-            Route::get('/get-deleted-orders', [Orders::class, 'getDeletedOrders'])->name('getAdminDeletedOrders');
+            Route::get('/get-deleted-orders', [PhysicalOrders::class, 'getDeletedOrders'])->name('getAdminDeletedOrders');
 
             Route::get('/add', [Orders::class, 'add'])->name('adminAddOrders');
             Route::get('/edit/{id}', [Orders::class, 'edit'])->name('adminEditOrders');
@@ -318,10 +339,18 @@ Route::prefix(config('admin.path'))->middleware('web')->group(function () {
             
             Route::post('/doDelete', [Orders::class, 'doDelete'])->name('adminDeleteOrder');
             Route::post('/doBulkDelete', [Orders::class, 'doBulkDelete'])->name('adminBulkDeleteOrder');
+            Route::post('/doBulkDeletePhysicalOrder', [PhysicalOrders::class, 'doBulkDelete'])->name('adminBulkDeletePhysicalOrder');
 
             Route::post('/doPerDelete', [Orders::class, 'doPerDelete'])->name('adminPerDeleteOrder');
             Route::post('/doPerBulkDelete', [Orders::class, 'doPerBulkDelete'])->name('adminBulkPerDeleteOrder');
             Route::post('/doBulkRestoreDelete', [Orders::class, 'doBulkRestoreDelete'])->name('adminBulkRestoreOrder');
+
+            Route::post('/doPerPhysicalBulkDelete', [PhysicalOrders::class, 'doPerBulkDelete'])->name('adminBulkPerDeletePhysicalOrder');
+            Route::post('/doPhysicalBulkRestoreDelete', [PhysicalOrders::class, 'doBulkRestoreDelete'])->name('adminBulkRestorePhysicalOrder');
+
+            
+
+            
 
             Route::post('/doSendInvoice', [Orders::class, 'doSendInvoice'])->name('adminDoSendInvoice');
         });
@@ -340,6 +369,8 @@ Route::prefix(config('admin.path'))->middleware('web')->group(function () {
 
             Route::get('/add', [Customers::class, 'add'])->name('adminAddCustomers');
             Route::post('/doAdd', [Customers::class, 'doAdd'])->name('adminDoAddCustomers');
+
+            Route::post('/doAddWalletAmount', [Customers::class, 'doAddWalletAmount'])->name('adminDoAddWalletAmount');
 
             Route::get('/get', [Customers::class, 'get'])->name('getAdminCustomers');
             Route::get('/export', [Customers::class, 'export'])->name('customerExport');
@@ -436,17 +467,33 @@ Route::prefix(config('admin.path'))->middleware('web')->group(function () {
         //Product
         Route::prefix('product')->group(function() {
             Route::get('/', [Product::class, 'index'])->name('adminProduct');
+
+            Route::get('/physical', [Product::class, 'physical'])->name('adminPhysicalProduct');
+
             Route::get('/bulk-update', [Product::class, 'bulkUpdate'])->name('adminProductBulkUpdate');
             Route::post('/doUpdateProductPricing', [Product::class, 'doUpdateProductPricing'])->name('adminDoUpdateProductPricing');
             Route::get('/get', [Product::class, 'get'])->name('getAdminProduct');
+            Route::get('/getPhysicalProduct', [Product::class, 'getPhysicalProduct'])->name('getAdminPhysicalProduct');
 
             Route::get('/add', [Product::class, 'add'])->name('adminAddProduct');
+            Route::get('/add-physical', [Product::class, 'addPhysicalProduct'])->name('adminAddPhysicalProduct');
+
             Route::get('/edit/{id}', [Product::class, 'edit'])->name('adminEditProduct');
+            Route::get('/edit-physical/{id}', [Product::class, 'editPhysicalProduct'])->name('adminEditPhysicalProduct');
+            
 
             Route::post('/doAdd', [Product::class, 'doAdd'])->name('adminDoAddProduct');
+            Route::post('/doAddPhysical', [Product::class, 'doAddPhysical'])->name('adminDoAddPhysicalProduct');
+
+
             Route::post('/doUpdate', [Product::class, 'doUpdate'])->name('adminDoUpdateProduct');
+            Route::post('/doUpdatePhysical', [Product::class, 'doUpdatePhysical'])->name('adminDoUpdatePhysicalProduct');
+            
             Route::post('/doDelete', [Product::class, 'doDelete'])->name('adminDeleteProduct');
+            Route::post('/doDeletePhysical', [Product::class, 'doDeletePhysical'])->name('adminDeletePhysicalProduct');
+
             Route::post('/doBulkDelete', [Product::class, 'doBulkDelete'])->name('adminBulkDeleteProduct');
+            Route::post('/doBulkDeletePhysical', [Product::class, 'doBulkDeletePhysical'])->name('adminBulkDeletePhysicalProduct');
         });
 
         //Pricing

@@ -1179,6 +1179,12 @@
 									</a>
 								</li>
 								<li>
+									<a href="#wallet" class="tab-head-font">
+										<img src="images/orders.png" alt="">
+										<p>My Wallet (Rs. {{ $customer->wallet_amount }})</p>
+									</a>
+								</li>
+								<li>
 									<a href="#addresses" class="tab-head-font">
 										<img src="images/addresses.png" alt="">
 										<p>Address</p>
@@ -1233,6 +1239,7 @@
 													<td>Product Name</td>
 													<td>Qty</td>
 													<td>Price</td>
+													<td>Wallet</td>
 													<td>Status</td>
 												</tr>
 											</thead>
@@ -1245,6 +1252,11 @@
 													<td>{{ $order->product_name }}</td>
 													<td>{{ $order->qty }}</td>
 													<td>&#8377;{{ $order->paid_amount }}</td>
+													@if($order->wallet_amount)
+														<td>&#8377;{{ $order->wallet_amount }}</td>
+													@else
+													<td>-</td>
+													@endif
 													<td>
 														@if($order->status == 'unpaid')
 															<a href="{{ route('payNow', ['orderid' => $order->order_id]) }}">Pay Now</a>
@@ -1252,6 +1264,38 @@
 															{{ strtoupper($order->status) }}
 														@endif
 													</td>
+												</tr>
+												@endforeach
+												@endif
+											</tbody>
+										</table>
+									</div>
+								</div>
+							</div>
+							<div class="data account-forms orders" id="wallet">
+								<div class="form">
+									<h1 class="tab-body-main-font uppercase">My Wallet</h1>
+									<div class="my-orders">
+										<table border="0">
+											<thead>
+												<tr>
+													<td>#</td>
+													<td>Credit</td>
+													<td>Debit</td>
+													<td>Comment</td>
+													<td>Date</td>
+												</tr>
+											</thead>
+											<tbody>
+												@if(!empty($walletHistory && $walletHistory->count()))
+												@php $i=1; @endphp
+												@foreach($walletHistory as $walletH)
+												<tr>
+													<td>{{ $i++ }}</td>
+													<td>{{ $walletH->credit }}</td>
+													<td>{{ $walletH->debit }}</td>
+													<td>{{ $walletH->narration }}</td>
+													<td>{{ date('d-m-y', strtotime($walletH->created_at)) }}</td>
 												</tr>
 												@endforeach
 												@endif

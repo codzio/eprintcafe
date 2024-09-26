@@ -10,11 +10,11 @@
             <div class="card-header border-0 cursor-pointer">
                 
                 <div class="card-title m-0">
-                    <h3 class="fw-bold m-0">Order Details</h3>
+                    <h3 class="fw-bold m-0">Physical Order Details</h3>
                 </div>
 
                 <div class="card-title">
-                    <a href="{{ route('adminOrders') }}" class="btn btn-primary">Back</a>
+                    <a href="{{ route('adminPhysicalOrders') }}" class="btn btn-primary">Back</a>
                 </div>
 
             </div>
@@ -25,13 +25,13 @@
 
                        <table class="table table-bordered">
                             @if($order->status == 'paid')
-                            <tr>
+                            <!-- <tr>
                                 <th>Action</th>
                                 <td>
                                     <button type="button" data-orderid="{{ $order->id }}" data-action="sms" onclick="sendInvoice(this)" id="sendSms" class="btn btn-primary btn-sm">Send SMS</button>
                                     <button type="button" data-orderid="{{ $order->id }}" data-action="email" onclick="sendInvoice(this)" id="sendEmail" class="btn btn-success btn-sm">Send Email</button>
                                 </td>
-                            </tr>
+                            </tr> -->
                             @endif
                             <tr>
                                <th>Status</th>
@@ -44,7 +44,7 @@
                                </td>
                                @endif
                            </tr>
-                           <tr>
+                           <!-- <tr>
                                <th>Pickup Option</th>
                                <td>
                                     <div style="display:flex;">
@@ -57,7 +57,7 @@
                                         <button type="button" data-id="{{ $order->id }}" data-url="{{ route('adminUpdatePickupOption') }}" id="changePickupOptionBtn" style="margin-left:10px" class="mt-4 btn btn-primary btn-sm">Update Pickup Option</button>
                                     </div>
                                </td>
-                           </tr>
+                           </tr> -->
                            <tr>
                                <th>Order Status</th>
                                <td>
@@ -74,7 +74,7 @@
                                    @endif
 
                                     @if($order->order_status != 'Cancel' && $order->order_status != 'Dispatch' && $order->status == 'paid')
-                                    <div style="display:flex;">
+                                    <!-- <div style="display:flex;">
                                         
                                         <select id="changeOrderStatus" class="form-control" style="width: 18%; margin-top: 10px;">
                                            <option value="">Select Status</option>
@@ -97,7 +97,7 @@
                                         <button type="button" data-id="{{ $order->id }}" data-url="{{ route('adminUpdateOrderStatus') }}" id="changeOrderStatusBtn" style="margin-left:10px" class="mt-4 btn btn-primary btn-sm">Update Order Status</button>
 
                                     </div>
-                                    <p id="changeOrderStatusMsg"></p>
+                                    <p id="changeOrderStatusMsg"></p> -->
                                     @endif
 
                                </td>
@@ -224,23 +224,7 @@
                                <td style="color:blue;font-weight: bold;">{{ $order->payment_method }}</td>
                            </tr>
 
-                           @if($order->product_id)
-                           <tr>
-                               <th>Product Detail</th>
-                               <td>{!! json_decode($order->product_details) !!}</td>
-                           </tr>
-                           <tr>
-                               <th>Price Details</th>
-                               <td>
-                                   <li><strong>Per Sheet Weight:</strong> {{ $priceDetail->per_sheet_weight }}</li>
-                                   <li><strong>Paper Type Price:</strong> {{ $priceDetail->paper_type_price }}</li>
-                                   <li><strong>Color & Print Side:</strong> {{ $priceDetail->printSideAndColorPrice }}</li>
-                                   <li><strong>Binding:</strong> {{ $priceDetail->binding }}</li>
-                                   <li><strong>Lamination:</strong> {{ $priceDetail->lamination }}</li>
-                                   <li><strong>Cover:</strong> {{ $priceDetail->cover }}</li>
-                               </td>
-                           </tr>
-                           @endif
+                           
                            <tr>
                                <th>Transactions Details</th>
                                <td>
@@ -261,34 +245,6 @@
                                    </li>
                                </td>
                            </tr>
-
-                           @if(!empty($order->wetransfer_link))
-                           <tr>
-                               <th>Wetransfer Link</th>
-                               <td>
-                                   <p><a target="_blank" href="{{ $order->wetransfer_link }}">Document Link</a></p>
-                               </td>
-                           </tr>
-                           @else
-                           <tr>
-                               <th>Document Link</th>
-                               <td>
-                                   @if(!empty($documentLinks))
-                                   @foreach($documentLinks as $docLink)
-
-                                    @if(isset($docLink->fileId))
-                                        <p><a target="_blank" href="https://drive.google.com/file/d/{{ $docLink->fileId }}">{{ $docLink->fileName }}</a></p>
-                                    @else
-                                    
-                                    {{$docLink}}
-
-                                    @endif
-
-                                   @endforeach
-                                   @endif
-                               </td>
-                           </tr>
-                           @endif
                            <tr>
                                <th>Customer Address</th>
                                <td>
@@ -344,12 +300,9 @@
                            <thead>
                                <th>#</th>
                                <th>Product Name</th>
-                               <th>Pages</th>
-                               <th>Copies</th>
-                               <th>Product Details</th>
-                               <th>Price Detail</th>
+                               <th>QTY</th>
+                               <th>Price</th>
                                <th>Remark</th>
-                               <th>File</th>
                            </thead>
                            <tbody>
                             @php $i=1; @endphp
@@ -361,29 +314,8 @@
                                 <td>{{ $i++ }}</td>
                                 <td>{{ $orderItem->product_name }}</td>
                                 <td>{{ $orderItem->qty }}</td>
-                                <td>{{ $orderItem->no_of_copies }}</td>
-                                <td>{!! json_decode($orderItem->product_details) !!}</td>
-                                <td>
-                                   <li><strong>Per Sheet Weight:</strong> {{ $priceDetail->per_sheet_weight }}</li>
-                                   <li><strong>Paper Type Price:</strong> {{ $priceDetail->paper_type_price }}</li>
-                                   <li><strong>Color & Print Side:</strong> {{ $priceDetail->printSideAndColorPrice }}</li>
-                                   <li><strong>Binding:</strong> {{ $priceDetail->binding }}</li>
-                                   
-                                   @if(isset($priceDetail->split))
-                                   <li><strong>Binding Split:</strong> {{ $priceDetail->split }}</li>
-                                   @endif
-
-                                   <li><strong>Lamination:</strong> {{ $priceDetail->lamination }}</li>
-                                   <li><strong>Cover:</strong> {{ $priceDetail->cover }}</li>
-                               </td>
+                                <td>{{ $orderItem->price }}</td>                                
                                <td>{{ $orderItem->remark }}</td>
-                               <td>
-                                   @if(!empty($orderItem->file_name))
-                                    <a download href="{{ asset('public') }}/{{ $orderItem->file_path.'/'.$orderItem->file_name }}">Download</a>
-                                   @else
-                                   <a href="javascript:void(0)">No File</a>
-                                   @endif
-                               </td>
                             </tr>
                             @endforeach
                            </tbody>

@@ -34,12 +34,28 @@ class Product extends Controller {
 		}
 
 		$data = array(
-			'title' => 'Product',
-			'pageTitle' => 'Product',
-			'menu' => 'product',
+			'title' => 'Digital Product',
+			'pageTitle' => 'Digital Product',
+			'menu' => 'digital-product',
 		);
 
 		return view('admin/product/index', $data);
+
+	}
+
+	public function physical(Request $request) {
+
+		if (!can('read', 'product')){
+			return redirect(route('adminDashboard'));
+		}
+
+		$data = array(
+			'title' => 'Physical Product',
+			'pageTitle' => 'Physical Product',
+			'menu' => 'physical-product',
+		);
+
+		return view('admin/product/physical', $data);
 
 	}
 
@@ -161,10 +177,10 @@ class Product extends Controller {
 		    $searchValue = $search_arr['value']; // Search value
 
 		     // Total records
-		    $totalRecords = ProductModel::join('category', 'product.category_id', '=', 'category.id')->select('count(*) as allcount');
+		    $totalRecords = ProductModel::join('category', 'product.category_id', '=', 'category.id')->where('product_type', 'digital')->select('count(*) as allcount');
 		    $totalRecords = $totalRecords->count();
 
-		    $totalRecordswithFilter = ProductModel::join('category', 'product.category_id', '=', 'category.id')->select('count(*) as allcount');
+		    $totalRecordswithFilter = ProductModel::join('category', 'product.category_id', '=', 'category.id')->where('product_type', 'digital')->select('count(*) as allcount');
 
 		    // if (!empty($searchValue)) {
 		    // 	$totalRecordswithFilter->where('admins.name', 'like', '%' .$searchValue . '%');
@@ -191,7 +207,7 @@ class Product extends Controller {
 		    $totalRecordswithFilter = $totalRecordswithFilter->count();
 
 		     // Fetch records
-		    $records = ProductModel::join('category', 'product.category_id', '=', 'category.id')->select('product.*', 'category.category_name')->skip($start)->take($rowperpage);
+		    $records = ProductModel::join('category', 'product.category_id', '=', 'category.id')->where('product_type', 'digital')->select('product.*', 'category.category_name')->skip($start)->take($rowperpage);
 
 		    // if (!empty($searchValue)) {
 		    // 	$records->where('admins.name', 'like', '%' .$searchValue . '%');
@@ -304,6 +320,177 @@ class Product extends Controller {
 		echo json_encode($this->status);
 	}
 
+	public function getPhysicalProduct(Request $request) {
+		if ($request->ajax()) {
+
+			$draw = $request->get('draw');
+
+			if (!can('read', 'product')){
+				$response = array(
+			        "draw" => intval($draw),
+			        "iTotalRecords" => 0,
+			        "iTotalDisplayRecords" => 0,
+			        "aaData" => []
+			    );
+
+			    echo json_encode($response);
+			    exit;
+			}
+			
+		    $start = $request->get("start");
+		    $rowperpage = $request->get("length"); // Rows display per page
+		    $inputName = $request->get('field');
+
+		    $singleDelUrl = route('adminDeletePhysicalProduct');
+
+		    //get type
+		    $columnIndex_arr = $request->get('order');
+		    $columnName_arr = $request->get('columns');
+		    $order_arr = $request->get('order');
+		    $search_arr = $request->get('search');
+
+		    $columnIndex = isset($columnIndex_arr[0]['column'])? $columnIndex_arr[0]['column']:''; // Column index
+		    $columnName = !empty($columnIndex)? $columnName_arr[$columnIndex]['data']:''; // Column name
+		    $columnSortOrder = !empty($order_arr)? $order_arr[0]['dir']:''; // asc or desc
+		    $searchValue = $search_arr['value']; // Search value
+
+		     // Total records
+		    $totalRecords = ProductModel::join('category', 'product.category_id', '=', 'category.id')->where('product_type', 'physical')->select('count(*) as allcount');
+		    $totalRecords = $totalRecords->count();
+
+		    $totalRecordswithFilter = ProductModel::join('category', 'product.category_id', '=', 'category.id')->where('product_type', 'physical')->select('count(*) as allcount');
+
+		    // if (!empty($searchValue)) {
+		    // 	$totalRecordswithFilter->where('admins.name', 'like', '%' .$searchValue . '%');
+		    // }
+
+		    if (!empty($searchValue)) {
+			    $totalRecordswithFilter->where(function ($query) use ($searchValue) {
+
+			        $query->where('category.category_name', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('category.category_slug', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('product.name', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('product.slug', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('product.description', 'like', '%' . $searchValue . '%');
+
+			        if (strtolower($searchValue) == 'active') {
+			        	$query->orWhere('product.is_active', 'like', '%1%');
+			        } elseif (strtolower($searchValue) == 'inactive') {
+			        	$query->orWhere('product.is_active', 'like', '%0%');
+			        }
+
+			    });
+			}
+
+		    $totalRecordswithFilter = $totalRecordswithFilter->count();
+
+		     // Fetch records
+		    $records = ProductModel::join('category', 'product.category_id', '=', 'category.id')->where('product_type', 'physical')->select('product.*', 'category.category_name')->skip($start)->take($rowperpage);
+
+		    // if (!empty($searchValue)) {
+		    // 	$records->where('admins.name', 'like', '%' .$searchValue . '%');
+		    // }
+
+		    if (!empty($searchValue)) {
+			    $records->where(function ($query) use ($searchValue) {
+			        
+			        $query->where('category.category_name', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('category.category_slug', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('product.name', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('product.slug', 'like', '%' . $searchValue . '%')
+			        	  ->orWhere('product.description', 'like', '%' . $searchValue . '%');
+
+			        if (strtolower($searchValue) == 'active') {
+			        	$query->orWhere('product.is_active', 'like', '%1%');
+			        } elseif (strtolower($searchValue) == 'inactive') {
+			        	$query->orWhere('product.is_active', 'like', '%0%');
+			        }
+
+			    });
+			}
+
+		    if (!empty($columnName) && !empty($columnSortOrder)) {
+		    	$records->orderBy($columnName, $columnSortOrder);
+		    } elseif (!empty($columnName)) {
+		    	$records->orderBy($columnName, 'desc');	
+		    } else {
+		    	$records->orderBy('product.id','desc');
+		    }
+
+		    $records = $records->get();
+
+		    $data_arr = array();
+		     
+		    if (!empty($records)) {
+		    	foreach($records as $record){
+			        $id = $record->id;
+
+			        $editUrl = route('adminEditPhysicalProduct', $id);
+
+			        $checkbox = '<div onclick="checkCheckbox(this)" class="form-check form-check-sm form-check-custom form-check-solid">
+							<input name="delete[]" data-kt-check-target="#media .single-check-input" class="form-check-input" type="checkbox" value="'.$id.'" />
+						</div>';
+
+					$action = '
+			          	<td class="text-end" data-kt-filemanager-table="action_dropdown">
+						<div class="d-flex justify-content-end">
+							<div class="ms-2">
+								<div class="menu menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-150px py-4" data-kt-menu="true">
+									
+									<div class="menu-item">
+										<a title="Edit" href="'.$editUrl.'" class="menu-link px-3">
+											<span class="menu-icon"><i class="ki-outline ki-pencil fs-2"></i></span>
+										</a>
+									</div>
+									
+									<div class="menu-item">
+										<a title="Delete" href="javascript:void(0)" data-url="'.$singleDelUrl.'" onclick="deleteData(this)" data-id="'.$id.'" class="menu-link text-danger px-3">
+											<span class="menu-icon"><i class="ki-outline ki-trash fs-2"></i></span>
+										</a>
+									</div>
+								</div>
+							</div>
+						</div>
+					</td>';
+
+					if ($record->is_active) {
+						$status = '<div class="badge badge-success">Active</div>';
+					} else {
+						$status = '<div class="badge badge-danger">Inactive</div>';
+					}
+
+			        $data_arr[] = array(
+			        	"checkbox" => $checkbox,
+			          	"category" => $record->category_name,
+			          	"product" => $record->name,
+			          	"slug" => $record->slug,
+			          	"status" => $status,
+			          	"action" => $action
+			        );
+			    }
+		    }
+
+		    $response = array(
+		        "draw" => intval($draw),
+		        "iTotalRecords" => $totalRecords,
+		        "iTotalDisplayRecords" => $totalRecordswithFilter,
+		        "aaData" => $data_arr
+		    );
+
+		    echo json_encode($response);
+		    exit;
+
+		} else {
+			$this->status = array(
+				'error' => true,
+				'eType' => 'final',
+				'msg' => 'Something went wrong'
+			);
+		}
+
+		echo json_encode($this->status);
+	}
+
 	public function add(Request $request) {
 
 		if (!can('create', 'product')){
@@ -327,6 +514,30 @@ class Product extends Controller {
 
 		return view('admin/product/add', $data);
 	}
+
+	public function addPhysicalProduct(Request $request) {
+
+		if (!can('create', 'product')){
+			return redirect(route('adminProduct'));
+		}
+
+		$categoryList = CategoryModel::where('is_active', 1)->get();
+		$productImg = url('public/backend/media/svg/avatars/blank.svg');
+		$bannerImg = url('public/backend/media/svg/avatars/blank.svg');
+
+		$data = array(
+			'title' => 'Physical Product',
+			'pageTitle' => 'Physical Product',
+			'menu' => 'physical-product',
+			'allowMedia' => true,
+			'editor' => true,
+			'productImg' => $productImg,
+			'bannerImg' => $bannerImg,
+			'categoryList' => $categoryList
+		);
+
+		return view('admin/product/addPhysical', $data);
+	}
 	
 	public function edit($id) {
 
@@ -334,7 +545,7 @@ class Product extends Controller {
 			return redirect(route('adminProduct'));
 		}
 
-		$getData = ProductModel::where(['id' => $id])->first();
+		$getData = ProductModel::where(['id' => $id, 'product_type' => 'digital'])->first();
 
 		if (empty($getData)) {
 			return redirect(route('adminProduct'));
@@ -374,6 +585,55 @@ class Product extends Controller {
 		);
 
 		return view('admin/product/edit', $data);
+
+	}
+
+	public function editPhysicalProduct($id) {
+
+		if (!can('update', 'product')){
+			return redirect(route('adminProduct'));
+		}
+
+		$getData = ProductModel::where(['id' => $id, 'product_type' => 'physical'])->first();
+
+		if (empty($getData)) {
+			return redirect(route('adminPhysicalProduct'));
+		}
+
+		$categoryList = CategoryModel::where('is_active', 1)->get();
+
+		$productImg = url('public/backend/media/svg/avatars/blank.svg');
+
+		if (getImg($getData->thumbnail_id)) {
+			$productImg = getImg($getData->thumbnail_id);
+		}
+
+		$bannerImg = url('public/backend/media/svg/avatars/blank.svg');
+
+		if (getImg($getData->banner_image)) {
+			$bannerImg = getImg($getData->banner_image);
+		}
+
+		$galleryImgs = [];
+
+		if (!empty($getData->gallery_images)) {
+			$galleryImgs = json_decode($getData->gallery_images);
+		}
+
+		$data = array(
+			'title' => 'Physical Product',
+			'pageTitle' => 'Physical Product',
+			'menu' => 'physical-product',
+			'allowMedia' => true,
+			'editor' => true,
+			'product' => $getData,
+			'categoryList' => $categoryList,
+			'productImg' => $productImg,
+			'bannerImg' => $bannerImg,
+			'galleryImgs' => $galleryImgs,
+		);
+
+		return view('admin/product/editPhysical', $data);
 
 	}
 
@@ -478,6 +738,107 @@ class Product extends Controller {
 		echo json_encode($this->status);
 	}
 
+	public function doAddPhysical(Request $request) {
+		if ($request->ajax()) {
+
+			if (!can('create', 'product')){
+				
+				$this->status = array(
+					'error' => true,
+					'eType' => 'final',
+					'msg' => 'Permission Denied.'
+				);
+
+				return json_encode($this->status);
+
+			}
+
+			$rules = [
+				'category' => 'required|numeric|exists:category,id',
+	            'name' => 'required',
+	            'slug' => 'required|unique:product,slug',
+	            'description' => 'required',
+	            'status' => 'required|numeric|in:0,1',
+	            'productImg' => 'required|numeric',
+	            'galleryImages' => 'sometimes|nullable',
+	            'displayOnHome' => 'sometimes|nullable',
+	            'shortDescription' => 'sometimes|nullable',
+	            'bannerImg' => 'sometimes|nullable',
+				'mrp' => 'required|numeric',
+				'sp' => 'sometimes|nullable|numeric|lte:mrp',
+	        ];			
+
+			$validator = Validator::make($request->post(), $rules);
+
+	        if ($validator->fails()) {
+	            
+	            $errors = $validator->errors()->getMessages();
+
+	            $this->status = array(
+					'error' => true,
+					'eType' => 'field',
+					'errors' => $errors,
+					'msg' => 'Validation failed'
+				);
+
+	        } else {
+
+	        	$galleryImgs = [];
+
+	        	if ($request->post('galleryImages')) {
+	        		$galleryImgs = json_encode($request->post('galleryImages'));
+	        	}
+
+	        	$displayOnHome = 0;
+
+	        	if ($request->post('displayOnHome')) {
+	        		$displayOnHome = 1;
+	        	}
+
+	        	$obj = [
+	        		'admin_id' => adminId(),
+	        		'name' => $request->post('name'),
+	        		'slug' => Str::slug($request->post('slug')),
+	        		'category_id' => $request->post('category'),
+	        		'description' => $request->post('description'),
+	        		'thumbnail_id' => $request->post('productImg'),
+	        		'gallery_images' => !empty($galleryImgs)? $galleryImgs:null,
+	        		'is_active' => $request->post('status'),
+	        		'display_on_home' => $displayOnHome,
+	        		'short_description' => $request->post('shortDescription'),
+	            	'banner_image' => $request->post('bannerImg'),
+					'product_type' => 'physical',
+					'mrp' => $request->post('mrp'),
+					'sp' => $request->post('sp'),
+	        	];
+
+	        	$isAdded = ProductModel::create($obj);
+
+	        	if ($isAdded) {
+    				$this->status = array(
+						'error' => false,								
+						'msg' => 'Product has been added successfully.'
+					);
+    			} else {
+    				$this->status = array(
+						'error' => true,
+						'eType' => 'final',
+						'msg' => 'Something went wrong.'
+					);
+    			}
+
+	        }
+
+		} else {
+			$this->status = array(
+				'error' => true,
+				'eType' => 'final',
+				'msg' => 'Something went wrong'
+			);
+		}
+
+		echo json_encode($this->status);
+	}
 
 	public function doUpdate(Request $request) {
 		if ($request->ajax()) {
@@ -525,7 +886,122 @@ class Product extends Controller {
 
 	        } else {
 
-	        	$getProduct = ProductModel::where(['id' => $id])->first();
+	        	$getProduct = ProductModel::where(['id' => $id, 'product_type' => 'digital'])->first();
+	        	
+	        	if (empty($getProduct)) {
+	        		
+	        		$this->status = array(
+						'error' => true,
+						'eType' => 'final',
+						'msg' => 'Something went wrong'
+					);				
+
+					return json_encode($this->status);
+	        	}
+
+	        	$galleryImgs = [];
+
+	        	if ($request->post('galleryImages')) {
+	        		$galleryImgs = json_encode($request->post('galleryImages'));
+	        	}
+
+	        	$displayOnHome = 0;
+
+	        	if ($request->post('displayOnHome')) {
+	        		$displayOnHome = 1;
+	        	}
+
+	        	$getProduct->name = $request->post('name');
+	        	$getProduct->slug = Str::slug($request->post('slug'));
+	        	$getProduct->category_id = $request->post('category');
+	        	$getProduct->description = $request->post('description');
+	        	$getProduct->thumbnail_id = $request->post('productImg');
+	        	$getProduct->gallery_images = $galleryImgs;
+	        	$getProduct->is_active = $request->post('status');
+	        	$getProduct->display_on_home = $displayOnHome;
+	        	$getProduct->registered_hsn_code = $request->post('registeredHsnCode');
+	        	$getProduct->unregistered_hsn_code = $request->post('unregisteredHsnCode');
+	        	$getProduct->short_description = $request->post('shortDescription');
+	           	$getProduct->banner_image = $request->post('bannerImg');
+	           	$getProduct->button_name = $request->post('buttonName');
+	        	$isUpdated = $getProduct->save();
+
+	        	if ($isUpdated) {
+    				
+    				$this->status = array(
+						'error' => false,								
+						'msg' => 'Product has been updated successfully.'
+					);
+
+    			} else {
+
+    				$this->status = array(
+						'error' => true,
+						'eType' => 'final',
+						'msg' => 'Something went wrong.'
+					);
+
+    			}
+
+	        }
+
+		} else {
+			$this->status = array(
+				'error' => true,
+				'eType' => 'final',
+				'msg' => 'Something went wrong'
+			);
+		}
+
+		echo json_encode($this->status);
+	}
+
+	public function doUpdatePhysical(Request $request) {
+		if ($request->ajax()) {
+
+			if (!can('update', 'product')){
+				
+				$this->status = array(
+					'error' => true,
+					'eType' => 'final',
+					'msg' => 'Permission Denied.'
+				);
+
+				return json_encode($this->status);
+			}
+
+			$id = $request->post('id');
+
+	        $validator = Validator::make($request->post(), [
+	        	'id' => 'required|numeric',
+				'category' => 'required|numeric|exists:category,id',
+	            'name' => 'required',
+	            'slug' => 'required|unique:product,slug,'.$id,
+	            'description' => 'required',
+	            'status' => 'required|numeric|in:0,1',
+	            'productImg' => 'required|numeric',
+	            'galleryImages' => 'sometimes|nullable',
+	            'displayOnHome' => 'sometimes|nullable',
+	            'shortDescription' => 'sometimes|nullable',
+	            'bannerImg' => 'sometimes|nullable',
+				'mrp' => 'required|numeric',
+				'sp' => 'sometimes|nullable|numeric|lte:mrp',
+	        ]);
+
+	        if ($validator->fails()) {
+	            
+	            $errors = $validator->errors()->getMessages();
+
+	            $this->status = array(
+					'error' => true,
+					'eType' => 'field',
+					'errors' => $errors,
+					'msg' => 'Validation failed'
+				);
+
+	        } else {
+
+	        	$getProduct = ProductModel::where(['id' => $id, 'product_type' => 'physical'])->first();
 	        	
 	        	if (empty($getProduct)) {
 	        		
@@ -558,11 +1034,10 @@ class Product extends Controller {
 	        	$getProduct->gallery_images = $galleryImgs;
 	        	$getProduct->is_active = $request->post('status');
 	        	$getProduct->display_on_home = $displayOnHome;
-	        	$getProduct->registered_hsn_code = $request->post('registeredHsnCode');
-	        	$getProduct->unregistered_hsn_code = $request->post('unregisteredHsnCode');
 	        	$getProduct->short_description = $request->post('shortDescription');
 	           	$getProduct->banner_image = $request->post('bannerImg');
-	           	$getProduct->button_name = $request->post('buttonName');
+				$getProduct->mrp = $request->post('mrp');
+				$getProduct->sp = $request->post('sp');
 	        	$isUpdated = $getProduct->save();
 
 	        	if ($isUpdated) {
@@ -790,7 +1265,7 @@ class Product extends Controller {
 	        	$id = $request->post('id');
 
 	        	//check if data exist
-	        	$getData = ProductModel::where('id', '=', $id)->first();	        	
+	        	$getData = ProductModel::where('id', '=', $id)->where('product_type', 'digital')->first();	        	
 	        	
 	        	if (!empty($getData)) {
 
@@ -798,12 +1273,87 @@ class Product extends Controller {
 	        		$deletePricing = PricingModel::where('product_id', $id)->delete();
 	        			
 	        		//Delete Product
-	        		$isDeleted = ProductModel::where('id', $id)->delete();
+	        		$isDeleted = ProductModel::where('id', $id)->where('product_type', 'digital')->delete();
 
         			if ($isDeleted) {
         				$this->status = array(
 							'error' => false,								
-							'msg' => 'Gsm has been deleted successfully.'
+							'msg' => 'Product has been deleted successfully.'
+						);
+        			} else {
+        				$this->status = array(
+							'error' => true,
+							'eType' => 'final',
+							'msg' => 'Something went wrong.'
+						);
+        			}
+
+	        	} else {
+	        		$this->status = array(
+						'error' => true,
+						'eType' => 'final',
+						'msg' => 'Something went wrong'
+					);
+	        	}
+	        }
+
+		} else {
+			$this->status = array(
+				'error' => true,
+				'eType' => 'final',
+				'msg' => 'Something went wrong'
+			);
+		}
+
+		echo json_encode($this->status);
+	}
+
+	public function doDeletePhysical(Request $request) {
+		if ($request->ajax()) {
+
+			if (!can('delete', 'product')){
+				
+				$this->status = array(
+					'error' => true,
+					'eType' => 'final',
+					'msg' => 'Permission Denied.'
+				);
+
+				return json_encode($this->status);
+
+			}
+
+			$validator = Validator::make($request->post(), [
+	            'id' => 'required|numeric',
+	        ]);
+
+	        if ($validator->fails()) {
+	            
+	            $errors = $validator->errors()->getMessages();
+
+	            $this->status = array(
+					'error' => true,
+					'eType' => 'field',
+					'errors' => $errors,
+					'msg' => 'Validation failed'
+				);
+
+	        } else {
+
+	        	$id = $request->post('id');
+
+	        	//check if data exist
+	        	$getData = ProductModel::where('id', '=', $id)->where('product_type', 'physical')->first();	        	
+	        	
+	        	if (!empty($getData)) {
+	        			
+	        		//Delete Product
+	        		$isDeleted = ProductModel::where('id', $id)->where('product_type', 'physical')->delete();
+
+        			if ($isDeleted) {
+        				$this->status = array(
+							'error' => false,								
+							'msg' => 'Physical product has been deleted successfully.'
 						);
         			} else {
         				$this->status = array(
@@ -866,7 +1416,7 @@ class Product extends Controller {
 	        	$ids = $request->post('ids');
 
 	        	//check if data exist
-	        	$getData = ProductModel::whereIn('id', $ids)->get();	        	
+	        	$getData = ProductModel::whereIn('id', $ids)->where('product_type', 'digital')->get();	             	
 	        	
 	        	if (!empty($getData)) {
 
@@ -874,12 +1424,85 @@ class Product extends Controller {
 	        		$deletePricing = PricingModel::whereIn('product_id', $ids)->delete();
 
 	        		//Delete Product
-	        		$isDeleted = ProductModel::whereIn('id', $ids)->delete();
+	        		$isDeleted = ProductModel::whereIn('id', $ids)->where('product_type', 'digital')->delete();
 	        		
 	        		if ($isDeleted) {
         				$this->status = array(
 							'error' => false,								
-							'msg' => 'Gsm has been deleted successfully.'
+							'msg' => 'Digital product has been deleted successfully.'
+						);
+        			} else {
+        				$this->status = array(
+							'error' => true,
+							'eType' => 'final',
+							'msg' => 'Something went wrong.'
+						);
+        			}
+
+	        	} else {
+	        		$this->status = array(
+						'error' => true,
+						'eType' => 'final',
+						'msg' => 'Something went wrong'
+					);
+	        	}
+	        }
+
+		} else {
+			$this->status = array(
+				'error' => true,
+				'eType' => 'final',
+				'msg' => 'Something went wrong'
+			);
+		}
+
+		echo json_encode($this->status);
+	}
+
+	public function doBulkDeletePhysical(Request $request) {
+		if ($request->ajax()) {
+
+			//check permissions
+			if (!can('delete', 'product')){
+				$this->status = array(
+					'error' => true,
+					'eType' => 'final',
+					'msg' => 'Permission Denied.'
+				);
+				return json_encode($this->status);
+			}
+
+			$validator = Validator::make($request->post(), [
+	            'ids' => 'required|array',
+	        ]);
+
+	        if ($validator->fails()) {
+	            
+	            $errors = $validator->errors()->getMessages();
+
+	            $this->status = array(
+					'error' => true,
+					'eType' => 'field',
+					'errors' => $errors,
+					'msg' => 'Validation failed'
+				);
+
+	        } else {
+
+	        	$ids = $request->post('ids');
+
+	        	//check if data exist
+	        	$getData = ProductModel::whereIn('id', $ids)->where('product_type', 'physical')->get();	        	
+	        	
+	        	if (!empty($getData)) {
+
+	        		//Delete Product
+	        		$isDeleted = ProductModel::whereIn('id', $ids)->where('product_type', 'physical')->delete();
+	        		
+	        		if ($isDeleted) {
+        				$this->status = array(
+							'error' => false,								
+							'msg' => 'Physical product has been deleted successfully.'
 						);
         			} else {
         				$this->status = array(

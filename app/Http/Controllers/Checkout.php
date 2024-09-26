@@ -30,6 +30,10 @@ use App\Models\OrderModel;
 use App\Models\OrderItemModel;
 use App\Models\CustomerModel;
 use App\Models\BarcodeModel;
+use App\Models\WalletHistoryModel;
+
+use App\Models\PhysicalOrderModel;
+use App\Models\PhysicalOrderItemModel;
 
 use Ixudra\Curl\Facades\Curl;
 
@@ -48,14 +52,12 @@ class Checkout extends Controller {
 
 	public function index(Request $request) {
 
-		return redirect()->route('uploadPage');
-
 		//remove payment session & document session
-		Session::forget('paymentSess');
+		Session::forget('physicalPaymentSess');
 		//Session::forget('documents');
 
 		//remove promo
-		Session::forget('couponSess');
+		Session::forget('physicalCouponSess');
 
 		$tempId = $request->cookie('tempUserId');		
 
@@ -66,7 +68,7 @@ class Checkout extends Controller {
 			return redirect()->route('loginPage', ['action' => 'checkout']);
 		}
 
-		$cond = ['product.is_active' => 1];
+		$cond = ['product.is_active' => 1, 'product.product_type' => 'physical'];
 
 		if (!empty($userId)) {
 			$cond['cart.user_id'] = $userId;
@@ -85,31 +87,15 @@ class Checkout extends Controller {
 
 			//Get Customer Address
 			$customerAddress = CustomerAddressModel::where('user_id', $userId)->first();
-
-			$fileList = Session::get('documents');
-			
-			if (empty($fileList)) {
-					
-				$getFileList = $getCartData[0]->document_link;
-		       	$request->session()->put('documents', $getFileList);
-		       	$fileList = $getCartData[0]->document_link;
-
-			} elseif (!json_decode($getCartData[0]->document_link)) {
-				//check if documents are not found in the cart document_link column
-				Session::forget('documents');
-			}
-
-			$docTemplate = view('frontend/components/documents', compact('fileList'))->render();
 		
 			$data = array(
 				'title' => 'Checkout',
 				'pageTitle' => 'Checkout',
 				'menu' => 'checkout',
 				'cartData' => $getCartData,
-				'productPrice' => productPriceMulti(),
+				'productPrice' => physicalProductPriceMulti(),
 				'customerData' => customerData(),
 				'customerAddress' => $customerAddress,
-				'docTemplate' => $docTemplate
 			);
 
 			return view('frontend/checkout', $data);
@@ -231,27 +217,29 @@ class Checkout extends Controller {
 	        			4. Get Weight Price
 	        		*/
 
-	        		$productPrice = productPriceMulti();
+	        		$productPrice = physicalProductPriceMulti();
 	        		$totalAmount = $productPrice->total;
-	        		$totalWeight = cartWeightMulti(); //in kg
+	        		// $totalWeight = cartWeightMulti(); //in kg
+	        		// $totalWeightInGm = $totalWeight*1000;
+					$totalWeight = 0; //in kg
 	        		$totalWeightInGm = $totalWeight*1000;
 
 	        		$shipping = 0;
 
 	        		//check free shipping
-	        		if ($isPincodeExist->free_shipping && ($totalAmount >= $isPincodeExist->free_shipping)) {
-	        			$shipping = 0;
-	        		} elseif ($totalWeightInGm <= 500) {
-	        			$shipping = $isPincodeExist->under_500gm;
-	        		} elseif ($totalWeightInGm <= 1000) {
-	        			$shipping = $isPincodeExist->from500_1000gm;
-	        		} elseif ($totalWeightInGm <= 2000) {
-	        			$shipping = $isPincodeExist->from1000_2000gm;
-	        		} elseif ($totalWeightInGm <= 3000) {
-	        			$shipping = $isPincodeExist->from2000_3000gm;
-	        		} else {
-	        			$shipping = $isPincodeExist->from2000_3000gm;
-	        		}
+	        		// if ($isPincodeExist->free_shipping && ($totalAmount >= $isPincodeExist->free_shipping)) {
+	        		// 	$shipping = 0;
+	        		// } elseif ($totalWeightInGm <= 500) {
+	        		// 	$shipping = $isPincodeExist->under_500gm;
+	        		// } elseif ($totalWeightInGm <= 1000) {
+	        		// 	$shipping = $isPincodeExist->from500_1000gm;
+	        		// } elseif ($totalWeightInGm <= 2000) {
+	        		// 	$shipping = $isPincodeExist->from1000_2000gm;
+	        		// } elseif ($totalWeightInGm <= 3000) {
+	        		// 	$shipping = $isPincodeExist->from2000_3000gm;
+	        		// } else {
+	        		// 	$shipping = $isPincodeExist->from2000_3000gm;
+	        		// }
 
 	        		//Start free shipping till 31Aug
 	        		$dateToCompare = strtotime('31-Aug-2024');
@@ -267,17 +255,17 @@ class Checkout extends Controller {
 	        			'shipping' => $shipping
 	        		];
 
-	        		$request->session()->put('shippingSess', $shippingSessObj);
+	        		$request->session()->put('physicalShippingSess', $shippingSessObj);
 
-	        		$priceData = productPriceMulti();
+	        		$priceData = physicalProductPriceMulti();
 
 	            	// $paidAmount = $priceData->total;
 	            	$paidAmount = $priceData->subTotal;
 	            	$packagingCharges = 0;
-	            	if (setting('packaging_charges')) {
-	            		$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
-	        			$paidAmount += $packagingCharges;
-	        		}
+	            	// if (setting('packaging_charges')) {
+	            	// 	$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+	        		// 	$paidAmount += $packagingCharges;
+	        		// }
 
 	        		$paidAmount += $priceData->shipping;
 
@@ -347,8 +335,6 @@ class Checkout extends Controller {
 	            'gstNumber' => 'sometimes|nullable',
 	            'acceptTermsCondition' => 'required',
 	            'remark' => 'sometimes|nullable',
-	            'wetransferLink' => 'sometimes|nullable',
-	            'courier' => 'required|in:DTDC,India Post',
 	            'paymentMethod' => 'required|in:phonepe,payu'
 	        ];
 
@@ -392,7 +378,7 @@ class Checkout extends Controller {
 	        		$getCustomerAdd = CustomerAddressModel::where('user_id', $userId)->latest()->first();
 
 	        		//Remove shipping session
-	        		Session::forget('shippingSess');
+	        		Session::forget('physicalShippingSess');
 
 	        		$obj = [
 	        			'user_id' => $userId,
@@ -437,156 +423,144 @@ class Checkout extends Controller {
 	        			4. Get Weight Price
 	        		*/
 
-	        		$productPrice = productPriceMulti();
+	        		$productPrice = physicalProductPriceMulti();
 	        		$totalAmount = $productPrice->total;
-	        		$totalWeight = cartWeightMulti(); //in kg
-	        		$totalWeightInGm = $totalWeight*1000;
+	        		// $totalWeight = cartWeightMulti(); //in kg
+	        		// $totalWeightInGm = $totalWeight*1000;
 
-	        		$couponSess = Session::get('couponSess');
+	        		$couponSess = Session::get('physicalCouponSess');
 
 	        		$shipping = 0;
 
 	        		//check free shipping
-	        		if ($isPincodeExist->free_shipping && ($totalAmount >= $isPincodeExist->free_shipping)) {
-	        			$shipping = 0;
-	        		} elseif ($totalWeightInGm <= 500) {
-	        			$shipping = $isPincodeExist->under_500gm;
-	        		} elseif ($totalWeightInGm <= 1000) {
-	        			$shipping = $isPincodeExist->from500_1000gm;
-	        		} elseif ($totalWeightInGm <= 2000) {
-	        			$shipping = $isPincodeExist->from1000_2000gm;
-	        		} elseif ($totalWeightInGm <= 3000) {
-	        			$shipping = $isPincodeExist->from2000_3000gm;
-	        		} else {
-	        			$shipping = $isPincodeExist->from2000_3000gm;
-	        		}
+	        		// if ($isPincodeExist->free_shipping && ($totalAmount >= $isPincodeExist->free_shipping)) {
+	        		// 	$shipping = 0;
+	        		// } elseif ($totalWeightInGm <= 500) {
+	        		// 	$shipping = $isPincodeExist->under_500gm;
+	        		// } elseif ($totalWeightInGm <= 1000) {
+	        		// 	$shipping = $isPincodeExist->from500_1000gm;
+	        		// } elseif ($totalWeightInGm <= 2000) {
+	        		// 	$shipping = $isPincodeExist->from1000_2000gm;
+	        		// } elseif ($totalWeightInGm <= 3000) {
+	        		// 	$shipping = $isPincodeExist->from2000_3000gm;
+	        		// } else {
+	        		// 	$shipping = $isPincodeExist->from2000_3000gm;
+	        		// }
 
-	        		$newShipping = $shipping;
+	        		// $newShipping = $shipping;
 
 	        		//check if coupon session exist
-	        		if (!empty($couponSess)) {
+	        		// if (!empty($couponSess)) {
 
-	        			$getCoupon = CouponModel::where(['id' => $couponSess['coupon_id'], 'is_active' => 1])->first();
+	        		// 	$getCoupon = CouponModel::where(['id' => $couponSess['coupon_id'], 'is_active' => 1])->first();
 
-	        			if (!empty($getCoupon)) {
+	        		// 	if (!empty($getCoupon)) {
 	        					
-	        				if ($getCoupon->coupon_for == 'shipping') {
+	        		// 		if ($getCoupon->coupon_for == 'shipping') {
 
-		        				//check coupon usage
-			                	$getCouponUsage = $getCoupon->coupon_usage;
+		        	// 			//check coupon usage
+			        //         	$getCouponUsage = $getCoupon->coupon_usage;
 
-			                	//Min Cart Amount
-			                	$getMinCartAmount = $getCoupon->min_cart_amount;
+			        //         	//Min Cart Amount
+			        //         	$getMinCartAmount = $getCoupon->min_cart_amount;
 	        					
-	        					if (!empty($getMinCartAmount)) {
-	                				if (productPriceMulti()->subTotal < $getMinCartAmount) {
-	                					return response()->json([
-	                						'error' => true,
-											'eType' => 'final',
-											'msg' => 'The minimum cart amount should be Rs. '. $getMinCartAmount
-	                					]);
-	                				}
-	                			}
+	        		// 			if (!empty($getMinCartAmount)) {
+	                // 				if (productPriceMulti()->subTotal < $getMinCartAmount) {
+	                // 					return response()->json([
+	                // 						'error' => true,
+					// 						'eType' => 'final',
+					// 						'msg' => 'The minimum cart amount should be Rs. '. $getMinCartAmount
+	                // 					]);
+	                // 				}
+	                // 			}
 
-	                			$deliveryCharges = 0;
+	                // 			$deliveryCharges = 0;
 
-	                			$discountRate = $getCoupon->coupon_price;
-	                			if ($getCoupon->coupon_type == 'percentage') {
-	                				$discount = ($shipping*$discountRate)/100;
-	                			} else {
-	                				$discount = $discountRate;
-	                			}
+	                // 			$discountRate = $getCoupon->coupon_price;
+	                // 			if ($getCoupon->coupon_type == 'percentage') {
+	                // 				$discount = ($shipping*$discountRate)/100;
+	                // 			} else {
+	                // 				$discount = $discountRate;
+	                // 			}
 
-	                			//check max discount
-	                			$maxDiscount = $getCoupon->max_discount;
+	                // 			//check max discount
+	                // 			$maxDiscount = $getCoupon->max_discount;
 
-	                			if (!empty($maxDiscount)) {
-	                				if ($discount > $maxDiscount) {
-	                					$discount = $maxDiscount;
-	                				}
-	                			}
+	                // 			if (!empty($maxDiscount)) {
+	                // 				if ($discount > $maxDiscount) {
+	                // 					$discount = $maxDiscount;
+	                // 				}
+	                // 			}
 
-	                			//check shipping charge
-	                			if ($discount >= $shipping) {
-	                				$newShipping = 0;
-	                				$discount = 0;
-	                			} else {
-	                				$deliveryCharges = $newShipping-$discount;
-	                			}
+	                // 			//check shipping charge
+	                // 			if ($discount >= $shipping) {
+	                // 				$newShipping = 0;
+	                // 				$discount = 0;
+	                // 			} else {
+	                // 				$deliveryCharges = $newShipping-$discount;
+	                // 			}
 
-	                			$shippingSessObj = [
-				        			'pincode' => $request->post('shippingPincode'),
-				        			// 'shipping' => $discount
-				        			'shipping' => $deliveryCharges
-				        		];
+	                // 			$shippingSessObj = [
+				    //     			'pincode' => $request->post('shippingPincode'),
+				    //     			// 'shipping' => $discount
+				    //     			'shipping' => $deliveryCharges
+				    //     		];
 
-				        		$request->session()->put('shippingSess', $shippingSessObj);
+				    //     		$request->session()->put('shippingSess', $shippingSessObj);
 
-		        			} else {
+		        	// 		} else {
 
-		        				$deliveryCharges = $shipping;
+		        	// 			$deliveryCharges = $shipping;
 
-		        				//Start free shipping till 31Aug
-				        		$dateToCompare = strtotime('31-Aug-2024');
-								$currentDate = strtotime(date('Y-m-d'));
+		        	// 			//Start free shipping till 31Aug
+				    //     		$dateToCompare = strtotime('31-Aug-2024');
+					// 			$currentDate = strtotime(date('Y-m-d'));
 
-								if ($currentDate <= $dateToCompare) {
-									$shipping = 0;
-								}
-								//End free shipping till 31Aug
+					// 			if ($currentDate <= $dateToCompare) {
+					// 				$shipping = 0;
+					// 			}
+					// 			//End free shipping till 31Aug
 
-		        				$shippingSessObj = [
-				        			'pincode' => $request->post('shippingPincode'),
-				        			'shipping' => $shipping
-				        		];
+		        	// 			$shippingSessObj = [
+				    //     			'pincode' => $request->post('shippingPincode'),
+				    //     			'shipping' => $shipping
+				    //     		];
 
-				        		$request->session()->put('shippingSess', $shippingSessObj);
+				    //     		$request->session()->put('shippingSess', $shippingSessObj);
 
-		        			}
+		        	// 		}
 
-	        			} else {
-	        				$deliveryCharges = $newShipping;
-	        			}
+	        		// 	} else {
+	        		// 		$deliveryCharges = $newShipping;
+	        		// 	}
 
-	        		} else {
+	        		// } else {
 
-	        			$deliveryCharges = $shipping;
+	        		// 	$deliveryCharges = $shipping;
 
-	        			//Start free shipping till 31Aug
-		        		$dateToCompare = strtotime('31-Aug-2024');
-						$currentDate = strtotime(date('Y-m-d'));
+	        		// 	//Start free shipping till 31Aug
+		        	// 	$dateToCompare = strtotime('31-Aug-2024');
+					// 	$currentDate = strtotime(date('Y-m-d'));
 
-						if ($currentDate <= $dateToCompare) {
-							$shipping = 0;
-						}
-						//End free shipping till 31Aug
+					// 	if ($currentDate <= $dateToCompare) {
+					// 		$shipping = 0;
+					// 	}
+					// 	//End free shipping till 31Aug
 
-	        			$shippingSessObj = [
-		        			'pincode' => $request->post('shippingPincode'),
-		        			'shipping' => $shipping
-		        		];
+	        		// 	$shippingSessObj = [
+		        	// 		'pincode' => $request->post('shippingPincode'),
+		        	// 		'shipping' => $shipping
+		        	// 	];
 
-		        		$request->session()->put('shippingSess', $shippingSessObj);
+		        	// 	$request->session()->put('shippingSess', $shippingSessObj);
 
-	        		}
+	        		// }
 
 	        		$remarkSessObj = [
 	        			'remark' => $request->post('remark'),
 	        		];
 
-	        		$request->session()->put('remarkSess', $remarkSessObj);
-
-	        		$wetransferSessObj = [
-	        			'wetransferLink' => $request->post('wetransferLink'),
-	        		];
-
-	        		$request->session()->put('wetransferLinkSess', $wetransferSessObj);
-
-	        		$courierSessObj = [
-	        			'courier' => $request->post('courier'),
-	        		];
-
-	        		$request->session()->put('courierSess', $courierSessObj);
+	        		$request->session()->put('physicalRemarkSess', $remarkSessObj);	        		
 
 	        		$paymentMethodSessObj = [
 	        			'paymentMethod' => $request->post('paymentMethod'),
@@ -594,12 +568,12 @@ class Checkout extends Controller {
 
 	        		$request->session()->put('paymentMethodSess', $paymentMethodSessObj);
 
-	        		$priceData = productPriceMulti();
-	        		$weightData = cartWeightMulti();
+	        		$priceData = physicalProductPriceMulti();
+	        		
+					//$weightData = cartWeightMulti();
 	        		// $productSpec = productSpec(getCartId());
 	        		$productSpec = 'eprintcafe';
-	        		$shippingSess = Session::get('shippingSess');
-	        		$documentSess = Session::get('documents');
+	        		$shippingSess = Session::get('physicalShippingSess');
 	        		
 	        		//check document session
 
@@ -626,20 +600,20 @@ class Checkout extends Controller {
 	        		//$paidAmount = 1;
 	        		// $paidAmount = $priceData->total;
 	        		$paidAmount = $priceData->subTotal;
-	        		$packagingCharges = 0;
-	        		//Add Packaging Charges
-	        		if (setting('packaging_charges')) {
-	        			$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
-			        	$paidAmount += $packagingCharges;
-	        		}
+	        		// $packagingCharges = 0;
+	        		// //Add Packaging Charges
+	        		// if (setting('packaging_charges')) {
+	        		// 	$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+			        // 	$paidAmount += $packagingCharges;
+	        		// }
 
 	        		//$paidAmount += $priceData->shipping;
-	        		if ($newShipping) {
-	        			$paidAmount += $priceData->shipping;
-	        		} else {
-	        			//$paidAmount += $newShipping;
-	        			$paidAmount += $deliveryCharges;
-	        		}
+	        		// if ($newShipping) {
+	        		// 	$paidAmount += $priceData->shipping;
+	        		// } else {
+	        		// 	//$paidAmount += $newShipping;
+	        		// 	$paidAmount += $deliveryCharges;
+	        		// }
 	        		$paidAmount -= $priceData->discount;
 
 	        		$transactionId = uniqid();
@@ -655,9 +629,9 @@ class Checkout extends Controller {
 				            'merchantTransactionId' => $transactionId,
 				            'merchantUserId' => 'MUID123',
 				            'amount' => $paidAmount*100,
-				            'redirectUrl' => route('response'),
+				            'redirectUrl' => route('physicalResponse'),
 				            'redirectMode' => 'REDIRECT',
-				            'callbackUrl' => route('response'),
+				            'callbackUrl' => route('physicalResponse'),
 				            'mobileNumber' => $request->post('shippingPhone'),
 				            'paymentInstrument' => array (
 				            	'type' => 'PAY_PAGE',
@@ -683,7 +657,7 @@ class Checkout extends Controller {
 
 		                if (isset($rData->success) && $rData->success) {
 
-		        			Session::forget('paymentSess');
+		        			Session::forget('physicalPaymentSess');
 
 		        			//create session for payment initiated
 		        			$paymentInitObj = [
@@ -691,7 +665,7 @@ class Checkout extends Controller {
 			        			'paidAmount' => $paidAmount,
 			        		];
 
-			        		$request->session()->put('paymentSess', $paymentInitObj);
+			        		$request->session()->put('physicalPaymentSess', $paymentInitObj);
 		        			
 		        			$this->status = array(
 								'error' => false,
@@ -710,6 +684,8 @@ class Checkout extends Controller {
 	        			
 	        		} else {
 
+						//$paidAmount = 1;
+
 	        			$MERCHANT_KEY = "q8S6BB"; // TEST MERCHANT KEY
 	        			$SALT = "FwyslfXn3zDZtugwyHCiZu70zDmariAM"; // TEST SALT
 
@@ -717,8 +693,8 @@ class Checkout extends Controller {
 	        			$PAYU_BASE_URL = "https://secure.payu.in"; // PRODUCATION
 
 	        			$name = $request->post('shippingName');
-				        $successURL = route('paymentResponse');
-				        $failURL = route('paymentFailPage');
+				        $successURL = route('physicalPaymentResponse');
+				        $failURL = route('physicalPaymentFailPage');
 				        $email = $request->post('shippingEmail');
 
 				        //$productName = ProductModel::where('id', getCartProductId())->value('name');
@@ -766,7 +742,7 @@ class Checkout extends Controller {
 				            $action = $PAYU_BASE_URL . '/_payment';
 				        }
 
-				        Session::forget('paymentSess');
+				        Session::forget('physicalPaymentSess');
 
 	        			//create session for payment initiated
 	        			$paymentInitObj = [
@@ -782,12 +758,12 @@ class Checkout extends Controller {
 	        				'productinfo' => $productName,
 		        		];
 
-		        		$request->session()->put('paymentSess', $paymentInitObj);
+		        		$request->session()->put('physicalPaymentSess', $paymentInitObj);
 	        			
 	        			$this->status = array(
 							'error' => false,
 							// 'redirect' => $rData->data->instrumentResponse->redirectInfo->url,
-							'redirect' => route('payumoneyPage'),
+							'redirect' => route('physicalPayumoneyPage'),
 							'msg' => 'Payment Initiated',
 							'paymentMethod' => 'payu',
 						);
@@ -883,6 +859,20 @@ class Checkout extends Controller {
 
 	        if (isset($response->success) && $response->success) {
 
+	        	if ($response->code != 'PAYMENT_SUCCESS') {
+	        		
+	        		Session::forget('shippingSess');
+		    		Session::forget('couponSess');
+		    		Session::forget('paymentSess');
+		    		Session::forget('documents');
+		    		Session::forget('remarkSess');
+		    		Session::forget('wetransferLinkSess');
+		    		Session::forget('courierSess');
+
+		        	return redirect()->route('paymentFailPage');
+
+	        	}
+
 	        	/*
 	        		Remove Session
 	        			* Payment Init
@@ -930,6 +920,7 @@ class Checkout extends Controller {
 		    	}
 
 	        	$customerAdd = CustomerAddressModel::where('user_id', customerId())->first();
+				$customerData = customerData();
 
 		    	$myCustomerAdd = [];
 
@@ -939,7 +930,7 @@ class Checkout extends Controller {
 		    		$myCustomerAdd = json_encode($myCustomerAdd);
 		    	}
 
-	        	$getCartData = CartModel::where('user_id', customerId())
+	        	$getCartData = CartModel::where('user_id', customerId())->where('product_type', 'digital')
 		    	->orderBy('cart.id', 'desc')
 		    	->get();
 
@@ -965,6 +956,19 @@ class Checkout extends Controller {
 	    			$paidAmount += $gstCharges;
 	    		}
 
+				$walletAmount = $customerData->wallet_amount;
+				$usedWalletAmount = 0;
+
+				if($walletAmount) {
+					if($paidAmount >= $walletAmount) {
+						$usedWalletAmount = $walletAmount;
+						$paidAmount = $paidAmount - $walletAmount;
+					} else {
+						$usedWalletAmount = $paidAmount;
+						$paidAmount = 0;
+					}
+				}
+
 	        	$orderObj = array(
 		    		'order_id' => $transactionId,
 		    		'user_id' => customerId(),
@@ -979,9 +983,11 @@ class Checkout extends Controller {
 		    		// 'paid_amount' => $productPrice->total,
 		    		'packaging_charges' => $packagingCharges,
 		    		'gst_charges' => $gstCharges,
+					'wallet_amount' => $usedWalletAmount,
 		    		'paid_amount' => $paidAmount,
 		    		// 'price_details' => json_encode($productPrice),
-		    		'transaction_details' => json_encode($_POST),
+		    		// 'transaction_details' => json_encode($_POST),
+		    		'transaction_details' => json_encode($input),
 		    		// 'customer_address' => json_encode($customerAdd->toArray()),
 		    		'customer_address' => $myCustomerAdd,
 		    		'document_link' => $getDocumentLink,
@@ -1007,6 +1013,19 @@ class Checkout extends Controller {
 	        		// }
 
 	        		$orderId = $isOrderCreated->id;
+
+					if($usedWalletAmount) {
+						//Deduct wallet amount
+						CustomerModel::where('id', customerId())->decrement('wallet_amount', $usedWalletAmount);
+
+						$obj = [
+							'user_id' => customerId(),
+							'debit' => $usedWalletAmount,
+							'narration' => 'Wallet amount used for order id '.strtoupper($transactionId)
+						];
+		
+						$isAdded = WalletHistoryModel::create($obj);
+					}
 
 		    		foreach ($getCartData as $cartData) {
 
@@ -1035,7 +1054,7 @@ class Checkout extends Controller {
 	        		$getCustomer = CustomerModel::where('id', customerId())->first();
 
 	        		//Remove Cart Data
-	        		CartModel::where('user_id', customerId())->delete();
+	        		CartModel::where('user_id', customerId())->where('product_type', 'digital')->delete();
 
 	        		//send SMS
 	        		SmsSending::orderPlaced($getCustomer->phone, $getCustomer->name);
@@ -1101,6 +1120,276 @@ class Checkout extends Controller {
     		Session::forget('remarkSess');
     		Session::forget('wetransferLinkSess');
     		Session::forget('courierSess');
+
+        	return redirect()->route('checkoutPage');
+        }
+        
+    }
+
+	public function physicalResponse(Request $request) {
+        $input = $request->all();
+
+        $paymentSess = Session::get('physicalPaymentSess');
+
+        if (!empty($paymentSess)) {
+       
+	        $merchantId = env("PROD_MERCHANT_ID");
+	        $transactionId = $paymentSess['transactionId'];
+
+	        $saltKey = env('PROD_MERCHANT_KEY');
+	        $saltIndex = 1;
+
+	        $finalXHeader = hash('sha256','/pg/v1/status/'.$merchantId.'/'.$transactionId.$saltKey).'###'.$saltIndex;
+
+	        $response = Curl::to(env('PROD_URL').'/pg/v1/status/'.$merchantId.'/'.$transactionId)
+	                ->withHeader('Content-Type:application/json')
+	                ->withHeader('accept:application/json')
+	                ->withHeader('X-VERIFY:'.$finalXHeader)
+	                ->withHeader('X-MERCHANT-ID:'.$merchantId)
+	                ->get();
+
+	        $response = json_decode($response);
+
+	        // echo "<pre>";
+	        // print_r($response);
+	        // die();
+
+	        if (isset($response->success) && $response->success) {
+
+	        	if ($response->code != 'PAYMENT_SUCCESS') {
+	        		
+	        		Session::forget('physicalShippingSess');
+		    		Session::forget('physicalCouponSess');
+		    		Session::forget('physicalPaymentSess');
+		    		Session::forget('physicalRemarkSess');
+		    		Session::forget('physicalCourierSess');
+
+		        	return redirect()->route('paymentFailPage');
+
+	        	}
+
+	        	/*
+	        		Remove Session
+	        			* Payment Init
+	        			* Shipping
+	        			* Coupon
+
+	        		Remove All Cart Items
+
+	        	*/
+
+	        	$productPrice = physicalProductPriceMulti();
+	        	$couponCode = null;
+	        	$discount = 0;
+
+	        	$couponData = Session::get('physicalCouponSess');
+
+	        	if (!empty($couponData)) {
+	        		$couponCode = $couponData['coupon_code'];
+	        		$discount = $couponData['discount'];
+	        	}	 
+
+	        	$shipping = 0;
+
+	        	$shippingData = Session::get('physicalShippingSess');
+	        	if (!empty($shippingData)) {
+	        		$shipping = $shippingData['shipping'];
+	        	}
+
+	        	$remark = null;
+		    	$remarkData = Session::get('physicalRemarkSess');
+		    	if (!empty($remarkData)) {
+		    		$remark = $remarkData['remark'];
+		    	}		    	
+
+		    	$courier = null;
+		    	$courierData = Session::get('physicalCourierSess');
+		    	if (!empty($courierData)) {
+		    		$courier = $courierData['courier'];
+		    	}
+
+	        	$customerAdd = CustomerAddressModel::where('user_id', customerId())->first();
+				$customerData = customerData();
+
+		    	$myCustomerAdd = [];
+
+		    	if (!empty($customerAdd)) {
+		    		$myCustomerAdd = json_encode($customerAdd->toArray());
+		    	} else {
+		    		$myCustomerAdd = json_encode($myCustomerAdd);
+		    	}
+
+	        	$getCartData = CartModel::where('user_id', customerId())->where('product_type', 'physical')
+		    	->orderBy('cart.id', 'desc')
+		    	->get();
+
+	        	$paidAmount = $productPrice->subTotal;
+	    		
+				$packagingCharges = 0;
+	    		// if (setting('packaging_charges')) {
+	    		// 	$packagingCharges = ($paidAmount*setting('packaging_charges'))/100;
+		        // 	$paidAmount += $packagingCharges;
+	    		// }
+
+	    		$paidAmount += $productPrice->shipping;
+		        $paidAmount -= $productPrice->discount;
+
+		        //add 5% GST
+	    		$gstCharges = 0;
+	    		// if (setting('gst')) {
+	    		// 	$gstCharges = ($paidAmount*setting('gst'))/100;
+	    		// 	$gstCharges = round($gstCharges, 2);
+	    		// 	$paidAmount += $gstCharges;
+	    		// }
+
+				// $walletAmount = $customerData->wallet_amount;
+				$usedWalletAmount = 0;
+
+				// if($walletAmount) {
+				// 	if($paidAmount >= $walletAmount) {
+				// 		$usedWalletAmount = $walletAmount;
+				// 		$paidAmount = $paidAmount - $walletAmount;
+				// 	} else {
+				// 		$usedWalletAmount = $paidAmount;
+				// 		$paidAmount = 0;
+				// 	}
+				// }
+
+	        	$orderObj = array(
+		    		'order_id' => $transactionId,
+		    		'user_id' => customerId(),
+		    		// 'product_id' => getCartProductId(),
+		    		// 'product_name' => $productName,
+		    		// 'product_details' => json_encode(productSpec(getCartId())),
+		    		// 'weight_details' => json_encode(cartWeight()),
+		    		'coupon_code' => $couponCode,
+		    		'discount' => $discount,
+		    		'shipping' => $shipping,
+		    		// 'paid_amount' => ceil($productPrice->total),
+		    		// 'paid_amount' => $productPrice->total,
+		    		'packaging_charges' => $packagingCharges,
+		    		'gst_charges' => $gstCharges,
+					'wallet_amount' => $usedWalletAmount,
+		    		'paid_amount' => $paidAmount,
+		    		// 'price_details' => json_encode($productPrice),
+		    		// 'transaction_details' => json_encode($_POST),
+		    		'transaction_details' => json_encode($input),
+		    		// 'customer_address' => json_encode($customerAdd->toArray()),
+		    		'customer_address' => $myCustomerAdd,
+		    		'remark' => $remark,
+		    		'payment_method' => 'Phonepe',
+		    	);
+
+	        	// if (!empty($barcode)) {
+	        	// 	$orderObj['shipping_label_number'] = $barcode->barcode;
+	        	// }
+
+	        	$isOrderCreated = PhysicalOrderModel::create($orderObj);
+	        	
+	        	if ($isOrderCreated) {
+
+	        		//update barcode once used
+	        		// if (!empty($barcode)) {
+	        		// 	BarcodeModel::where('id', $barcode->id)->update(['is_used' => 1]);
+	        		// }
+
+	        		$orderId = $isOrderCreated->id;
+
+					if($usedWalletAmount) {
+						//Deduct wallet amount
+						CustomerModel::where('id', customerId())->decrement('wallet_amount', $usedWalletAmount);
+
+						$obj = [
+							'user_id' => customerId(),
+							'debit' => $usedWalletAmount,
+							'narration' => 'Wallet amount used for order id '.strtoupper($transactionId)
+						];
+		
+						$isAdded = WalletHistoryModel::create($obj);
+					}
+
+		    		foreach ($getCartData as $cartData) {
+
+		    			$productData = ProductModel::where('id', $cartData->product_id)->first();
+
+						$price = $productData->mrp;
+
+						if(!empty($productData->sp) && $productData->mrp > $productData->sp) {
+							$price = $productData->sp;
+						}
+		    			
+		    			$orderItemObj = array(
+		    				'order_id' => $orderId,
+		    				'product_id' => $cartData->product_id,
+		    				'product_name' => $productData->name,
+		    				'qty' => $cartData->qty,
+		    				// 'product_details' => json_encode(productSpec($cartData->id)),
+		    				// 'weight_details' => json_encode(cartWeightSingle($cartData->id)),
+		    				// 'price_details' => json_encode(productSinglePrice($cartData->product_id)),
+							'price' => $price,
+		    			);
+
+		    			PhysicalOrderItemModel::create($orderItemObj);
+
+		    		}
+
+	        		$getCustomer = CustomerModel::where('id', customerId())->first();
+
+	        		//Remove Cart Data
+	        		CartModel::where('user_id', customerId())->where('product_type', 'physical')->delete();
+
+	        		//send SMS
+	        		SmsSending::orderPlaced($getCustomer->phone, $getCustomer->name);
+
+	        		//send email
+	        		//$orderId = 8;
+					// $getOrder = OrderModel::
+					// join('product', 'orders.product_id', '=', 'product.id')
+					// ->select('orders.*', 'product.registered_hsn_code', 'product.unregistered_hsn_code')
+					// ->where('orders.id', $isOrderCreated->id)->first();
+
+					// EmailSending::orderEmail($getOrder);
+	        		
+	        		// Session::forget('shippingSess');
+	        		// Session::forget('couponSess');
+	        		// Session::forget('paymentSess');
+	        		// Session::forget('documents');
+
+	        		//EmailSending::orderEmailNew($orderId);
+	    		
+		    		Session::forget('physicalShippingSess');
+		    		Session::forget('physicalCouponSess');
+		    		Session::forget('physicalPaymentSess');		    		
+		    		Session::forget('physicalRemarkSess');		    		
+
+					return redirect()->route('thankyouPage', ['amount' => $paidAmount, 'transactionId' => $transactionId]);
+
+	        	} else {
+
+	        		Session::forget('physicalShippingSess');
+		    		Session::forget('physicalCouponSess');
+		    		Session::forget('physicalPaymentSess');		    		
+		    		Session::forget('physicalRemarkSess');	
+
+	        		return redirect()->route('paymentFailPage');
+	        	}
+
+	        } else {
+
+	        	Session::forget('physicalShippingSess');
+				Session::forget('physicalCouponSess');
+				Session::forget('physicalPaymentSess');		    		
+				Session::forget('physicalRemarkSess');	
+
+	        	return redirect()->route('paymentFailPage');
+	        }
+
+        } else {
+
+        	Session::forget('physicalShippingSess');
+			Session::forget('physicalCouponSess');
+			Session::forget('physicalPaymentSess');		    		
+			Session::forget('physicalRemarkSess');	
 
         	return redirect()->route('checkoutPage');
         }
